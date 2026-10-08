@@ -199,7 +199,7 @@ export default function Preloader({ onComplete }) {
             ctx.lineTo(p2.x, p2.y);
             ctx.strokeStyle = p1.colorType === 'orange' || p2.colorType === 'orange'
               ? `rgba(249, 115, 22, ${alpha})`
-              : `rgba(56, 189, 248, ${alpha})`;
+              : `rgba(168, 85, 247, ${alpha})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -209,12 +209,12 @@ export default function Preloader({ onComplete }) {
       for (let i = 0; i < projectedNodes.length; i++) {
         const p = projectedNodes[i];
         const isOrange = p.colorType === 'orange';
-        const colorHex = isOrange ? '#f97316' : '#38bdf8';
+        const colorHex = isOrange ? '#d946ef' : '#a855f7';
         const alpha = Math.max(0.2, Math.min(1, (p.z + 250) / 450));
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = isOrange ? `rgba(249, 115, 22, ${alpha * 0.2})` : `rgba(56, 189, 248, ${alpha * 0.2})`;
+        ctx.fillStyle = isOrange ? `rgba(217, 70, 239, ${alpha * 0.2})` : `rgba(168, 85, 247, ${alpha * 0.2})`;
         ctx.fill();
 
         ctx.beginPath();
@@ -242,7 +242,7 @@ export default function Preloader({ onComplete }) {
 
         ctx.beginPath();
         ctx.arc(px, py, Math.max(0.5, pt.size * scale * 0.6), 0, Math.PI * 2);
-        ctx.fillStyle = i % 2 === 0 ? `rgba(56, 189, 248, ${pt.alpha})` : `rgba(249, 115, 22, ${pt.alpha})`;
+        ctx.fillStyle = i % 2 === 0 ? `rgba(168, 85, 247, ${pt.alpha})` : `rgba(217, 70, 239, ${pt.alpha})`;
         ctx.fill();
       }
 

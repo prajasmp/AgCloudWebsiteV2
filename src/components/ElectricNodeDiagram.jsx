@@ -12,7 +12,7 @@ export default function ElectricNodeDiagram() {
       icon: Gamepad2,
       side: 'left',
       yOffset: 40,
-      color: '#38bdf8'
+      color: '#a855f7'
     },
     {
       id: 'vps',
@@ -57,7 +57,7 @@ export default function ElectricNodeDiagram() {
       icon: Globe,
       side: 'right',
       yOffset: 320,
-      color: '#60a5fa'
+      color: '#c084fc'
     }
   ];
 
@@ -74,8 +74,8 @@ export default function ElectricNodeDiagram() {
         <svg className="circuit-svg" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id="cyanElectric" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="1" />
-              <stop offset="50%" stopColor="#f97316" stopOpacity="1" />
+              <stop offset="0%" stopColor="#a855f7" stopOpacity="1" />
+              <stop offset="50%" stopColor="#d946ef" stopOpacity="1" />
               <stop offset="100%" stopColor="#a855f7" stopOpacity="1" />
             </linearGradient>
 
