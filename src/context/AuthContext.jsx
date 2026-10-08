@@ -3,7 +3,6 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {
   auth,
   googleProvider,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut as firebaseSignOut,
@@ -107,42 +106,9 @@ export function AuthProvider({ children }) {
     setAuthLoading(true);
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result?.user) {
-        const idToken = await result.user.getIdToken().catch(() => null);
-        const gUser = {
-          uid: result.user.uid,
-          displayName: result.user.displayName || result.user.email?.split('@')[0] || 'Google User',
-          email: result.user.email,
-          photoURL: result.user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(result.user.displayName || 'G')}&background=0284c7&color=ffffff&bold=true`,
-          idToken
-        };
-        setUser(gUser);
-        await syncUserToDatabase(gUser);
-      }
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
-      console.warn('Firebase login attempt handled:', err?.code, err?.message);
-
-      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
-        console.log('User closed authentication popup window.');
-        setAuthLoading(false);
-        return;
-      }
-
-      if (
-        err?.code === 'auth/popup-blocked' ||
-        err?.message?.includes('Cross-Origin-Opener-Policy') ||
-        err?.message?.includes('window.closed')
-      ) {
-        try {
-          console.log('Triggering safe signInWithRedirect fallback...');
-          await signInWithRedirect(auth, googleProvider);
-          return;
-        } catch (redirectErr) {
-          console.error('signInWithRedirect fallback failed:', redirectErr);
-        }
-      }
-    } finally {
+      console.error('Firebase Google redirect sign-in failed:', err?.code, err?.message);
       setAuthLoading(false);
     }
   };
