@@ -176,32 +176,20 @@ export default function Plans() {
           <h1 className="craft-main-title">Get all AG Cloud power for your project</h1>
           <p className="craft-main-desc">High-performance game servers, VPS, and bot hosting with low Asia latency</p>
 
-          <div className="billing-pill-container">
-            <button className={`pill-option ${billingCycle === 'month' ? 'active' : ''}`} disabled={billingCycle !== 'month'}>
-              Month
-            </button>
-            <button className="pill-option" disabled>
-              Quarter
-            </button>
-            <button className={`pill-option ${billingCycle === 'year' ? 'active' : ''}`} disabled={billingCycle !== 'year'}>
-              Year
-            </button>
-          </div>
-        </div>
-
-        <div className="plan-toolbar">
-          <div className="category-tabs">
+          <div className="billing-pill-container plan-section-tabs" aria-label="Plan categories">
             {CATEGORY_GROUPS.map(group => (
               <button
                 key={group.id}
-                className={`tab-btn ${activeGroup.id === group.id ? 'active' : ''}`}
+                className={`pill-option ${activeGroup.id === group.id ? 'active' : ''}`}
                 onClick={() => selectCategory(group.categories[0])}
               >
                 {group.label}
               </button>
             ))}
           </div>
+        </div>
 
+        <div className="plan-toolbar">
           {activeGroup.categories.length > 1 && (
             <div className="category-tabs" aria-label={`${activeGroup.label} categories`}>
               {activeGroup.categories.map(category => (
@@ -215,6 +203,18 @@ export default function Plans() {
               ))}
             </div>
           )}
+
+          <div className="billing-pill-container" aria-label="Billing period">
+            <button className={`pill-option ${billingCycle === 'month' ? 'active' : ''}`} disabled={billingCycle !== 'month'}>
+              Month
+            </button>
+            <button className="pill-option" disabled>
+              Quarter
+            </button>
+            <button className={`pill-option ${billingCycle === 'year' ? 'active' : ''}`} disabled={billingCycle !== 'year'}>
+              Year
+            </button>
+          </div>
 
           <div className="search-box">
             <Search size={18} className="search-icon" />

@@ -19,11 +19,12 @@ export const CATEGORY_GROUPS = [
 export const DEFAULT_LOCATION = "India / Singapore";
 
 const GAME_FEATURES = ["DDoS protection", "99.9% uptime", "Game panel access"];
+const GAME_PLAN_LABELS = { intel: "Intel", amd: "AMD", ryzen: "Ryzen" };
 
 const gamePlan = (category, ram, price, cpu, storage, badge) => ({
   id: `${category}-${ram}gb`,
   category,
-  name: `${category[0].toUpperCase()}${category.slice(1)} Plan ${ram} GB`,
+  name: `${GAME_PLAN_LABELS[category]} Plan ${ram} GB`,
   ram: `${ram} GB RAM`,
   cpu: `${cpu}% CPU`,
   storage: `${storage} GB NVMe SSD`,

@@ -2619,9 +2619,9 @@ a {
 }
 
 .pill-option.active {
-  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #581c87 0%, #9333ea 100%);
   color: #ffffff;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 20px rgba(147, 51, 234, 0.5);
 }
 
 .save-badge {
@@ -5591,4 +5591,43 @@ textarea:focus {
 [style*="border: 1px dashed rgba(56, 189, 248"],
 [style*="border-color: rgba(56, 189, 248"] {
   border-color: rgba(168, 85, 247, 0.45) !important;
+}
+
+.plan-toolbar {
+  position: relative;
+  z-index: 5;
+}
+
+.plan-toolbar .category-tabs {
+  position: relative;
+  z-index: 6;
+  min-height: 40px;
+}
+
+.plan-toolbar .category-tabs .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ead8ff !important;
+  background: rgba(68, 30, 105, 0.72) !important;
+  border: 1px solid rgba(192, 132, 252, 0.55) !important;
+}
+
+.plan-toolbar .category-tabs .tab-btn.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%) !important;
+  border-color: #d8b4fe !important;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.5) !important;
+}
+
+.plan-section-tabs {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.plan-section-tabs .pill-option {
+  padding-right: 1rem;
+  padding-left: 1rem;
 }
