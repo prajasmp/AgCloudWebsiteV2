@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sig
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB6hFGmjsowcYxC33JOB-QlBTePk2QwjAk",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "www.agcloud.fun",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ag-cloud-a4a6d.firebaseapp.com",
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://ag-cloud-a4a6d-default-rtdb.firebaseio.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "ag-cloud-a4a6d",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "ag-cloud-a4a6d.firebasestorage.app",
