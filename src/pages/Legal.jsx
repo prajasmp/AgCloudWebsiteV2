@@ -87,10 +87,6 @@ export default function Legal() {
         <p>
           Customers are responsible for renewing services before expiry and maintaining their own backups. Expired or unpaid services may be suspended and their data may later be permanently deleted.
         </p>
-        <h3>Free plans</h3>
-        <p>
-          Boost and invite plans remain active only while their eligibility requirements continue to be met. Fake, alternate, token, join-for-join, or otherwise manipulated invites are not accepted.
-        </p>
         <h3>Availability</h3>
         <p>
           Service locations, hardware and capacity are subject to availability. The 4 GB Ryzen VPS option is offered only when stock is available.
