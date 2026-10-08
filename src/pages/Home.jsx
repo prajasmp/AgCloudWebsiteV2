@@ -31,7 +31,7 @@ export default function Home() {
       dx: (Math.random() - 0.5) * 0.4,
       dy: -Math.random() * 0.5 - 0.2,
       alpha: Math.random() * 0.7 + 0.2,
-      color: Math.random() > 0.3 ? '#00C8FF' : '#168BFF'
+      color: Math.random() > 0.3 ? '#A855F7' : '#D946EF'
     }));
 
     const render = () => {
@@ -249,12 +249,12 @@ export default function Home() {
                   <svg viewBox="0 0 200 40" className="waveform-svg">
                     <path
                       d="M 0 25 Q 25 10, 50 28 T 100 15 T 150 30 T 200 18 L 200 40 L 0 40 Z"
-                      fill="rgba(0, 200, 255, 0.15)"
+                      fill="rgba(168, 85, 247, 0.15)"
                     />
                     <path
                       d="M 0 25 Q 25 10, 50 28 T 100 15 T 150 30 T 200 18"
                       fill="none"
-                      stroke="#00C8FF"
+                      stroke="#A855F7"
                       strokeWidth="2.5"
                     />
                   </svg>

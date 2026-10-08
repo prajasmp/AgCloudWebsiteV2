@@ -3449,6 +3449,148 @@ a {
   pointer-events: none;
 }
 
+.nav-wrap-design6 {
+  background: rgba(12, 5, 24, 0.94);
+  box-shadow: 0 10px 35px rgba(80, 25, 130, 0.28);
+}
+
+.brand-logo-design6 {
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.65));
+}
+
+.nav-links-design6,
+.support-menu-dropdown,
+.nav-icon-btn,
+.currency-toggle-design6,
+.login-btn-design6,
+.user-profile-design6 {
+  border-color: rgba(168, 85, 247, 0.28);
+}
+
+.nav-links-design6 {
+  background: rgba(24, 11, 39, 0.78);
+}
+
+.nav-links-design6 a:hover,
+.nav-dropdown-btn:hover,
+.menu-icon.cyan,
+.nav-icon-btn:hover,
+.currency-toggle-design6:hover,
+.login-btn-design6:hover,
+.ag-discord-cta:hover,
+.ag-section-badge,
+.users-icon,
+.hud-row-icon,
+.stat-icon,
+.feat-icon,
+.pill-icon.cyan,
+.pill-icon.blue {
+  color: #c084fc;
+}
+
+.nav-links-design6 a.active,
+.support-menu-dropdown a:hover,
+.currency-toggle-design6:hover,
+.login-btn-design6:hover {
+  background: rgba(168, 85, 247, 0.16);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.22);
+}
+
+.nav-links-design6 a.active::after,
+.neon-line-svg path {
+  background: #a855f7;
+  stroke: #a855f7;
+  box-shadow: 0 0 10px #a855f7, 0 0 4px #a855f7;
+}
+
+.support-menu-dropdown,
+.nav-search-modal {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(168, 85, 247, 0.18);
+}
+
+.get-started-btn-design6,
+.ag-primary-cta,
+.cta-circle-btn {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  color: #ffffff;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.42);
+}
+
+.get-started-btn-design6:hover,
+.ag-primary-cta:hover,
+.cta-circle-btn:hover {
+  color: #ffffff;
+  box-shadow: 0 0 32px rgba(168, 85, 247, 0.62);
+}
+
+.ag-artwork-text-left .cyan-highlight,
+.pathway-word,
+.badge-sparkle,
+.cyan-electric-text,
+.hud-label {
+  color: #c084fc;
+  text-shadow: 0 0 15px rgba(168, 85, 247, 0.55);
+}
+
+.cyan-electric-text {
+  background: linear-gradient(135deg, #c084fc 0%, #e879f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ag-glass-badge,
+.ag-feature-pill,
+.ag-hud-card,
+.ag-hud-panel,
+.ag-game-card,
+.ag-floating-cta-badge,
+.ag-feature-card,
+.ag-bottom-cta-box {
+  border-color: rgba(168, 85, 247, 0.28);
+}
+
+.ag-glass-badge,
+.ag-hud-card,
+.ag-hud-panel,
+.ag-game-card,
+.ag-floating-cta-badge,
+.ag-feature-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 18px rgba(168, 85, 247, 0.1);
+}
+
+.ag-feature-pill:hover,
+.ag-game-card:hover,
+.ag-hud-card:hover,
+.ag-feature-card:hover,
+.ag-floating-cta-badge:hover {
+  border-color: rgba(192, 132, 252, 0.6);
+  box-shadow: 0 10px 28px rgba(168, 85, 247, 0.22);
+}
+
+.ag-stats-bar-wrapper,
+.ag-stat-item {
+  border-color: rgba(168, 85, 247, 0.22);
+}
+
+.feat-icon-ring {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.32);
+}
+
+.ag-bottom-cta-box {
+  background: linear-gradient(135deg, rgba(25, 10, 42, 0.92), rgba(45, 15, 68, 0.88));
+  box-shadow: 0 15px 40px rgba(168, 85, 247, 0.16);
+}
+
+.hero-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(7, 10, 19, 0.1) 0%, rgba(7, 10, 19, 0.4) 50%, rgba(7, 10, 19, 0.85) 85%, #070a13 100%),
+    linear-gradient(90deg, rgba(7, 10, 19, 0.88) 0%, rgba(7, 10, 19, 0.6) 45%, rgba(7, 10, 19, 0.25) 100%),
+    radial-gradient(ellipse at center, transparent 35%, rgba(7, 10, 19, 0.75) 100%),
+    radial-gradient(circle at 75% 30%, rgba(168, 85, 247, 0.14) 0%, transparent 60%),
+    rgba(7, 10, 19, 0.45);
+}
+
 [style*="color: rgb(56, 189, 248)"],
 [style*="color: rgb(96, 165, 250)"],
 [style*="color: rgb(125, 211, 252)"] {

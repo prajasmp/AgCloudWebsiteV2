@@ -42,7 +42,7 @@ export default function Navbar() {
   };
 
   const defaultAvatar = (name) =>
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'AG')}&background=00c8ff&color=020711&bold=true`;
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'AG')}&background=a855f7&color=020711&bold=true`;
 
   return (
     <header className="nav-wrap-design6">
@@ -236,7 +236,7 @@ export default function Navbar() {
           <path
             d="M 0 2 H 160 L 180 10 H 1020 L 1040 2 H 1200"
             fill="none"
-            stroke="#00C8FF"
+            stroke="#A855F7"
             strokeWidth="2.5"
             filter="url(#neonGlowFilter)"
           />
