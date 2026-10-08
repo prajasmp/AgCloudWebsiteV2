@@ -5350,3 +5350,245 @@ textarea:focus {
   color: #ffffff !important;
   transform: translateY(-1px);
 }
+
+:root {
+  --bg-primary: #080510;
+  --bg-secondary: #10091b;
+  --bg-card: rgba(23, 13, 39, 0.72);
+  --bg-card-hover: rgba(32, 16, 52, 0.82);
+  --border-color: rgba(168, 85, 247, 0.2);
+  --primary-cyan: #a855f7;
+  --primary-orange: #d946ef;
+  --accent-purple: #c084fc;
+  --shadow-glow-cyan: 0 0 25px rgba(168, 85, 247, 0.28);
+  --shadow-glow-orange: 0 0 35px rgba(217, 70, 239, 0.3);
+}
+
+.nav-wrap-design6 {
+  background: rgba(12, 5, 24, 0.94);
+  box-shadow: 0 10px 35px rgba(80, 25, 130, 0.28);
+}
+
+.brand-logo-design6,
+.brand-logo {
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.65));
+}
+
+.nav-links-design6,
+.support-menu-dropdown,
+.nav-icon-btn,
+.currency-toggle-design6,
+.login-btn-design6,
+.user-profile-design6,
+.nav-search-modal {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.nav-links-design6 {
+  background: rgba(24, 11, 39, 0.78);
+}
+
+.nav-links-design6 a:hover,
+.nav-dropdown-btn:hover,
+.nav-icon-btn:hover,
+.currency-toggle-design6:hover,
+.login-btn-design6:hover,
+.ag-discord-cta:hover,
+.ag-section-badge,
+.users-icon,
+.hud-row-icon,
+.stat-icon,
+.feat-icon,
+.pill-icon.cyan,
+.pill-icon.blue,
+.menu-icon.cyan,
+.input-with-icon .input-icon,
+.footer-col a:hover,
+.text-cyan,
+.text-blue,
+.feature-check,
+.check-cyan,
+.currency-prefix,
+.free-label-lg {
+  color: #c084fc !important;
+}
+
+.nav-links-design6 a.active {
+  color: #ffffff;
+  background: rgba(168, 85, 247, 0.16);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.22);
+}
+
+.nav-links-design6 a.active::after {
+  background: #a855f7;
+  box-shadow: 0 0 10px #a855f7, 0 0 4px #a855f7;
+}
+
+.support-menu-dropdown a:hover,
+.currency-toggle-design6:hover,
+.login-btn-design6:hover {
+  background: rgba(168, 85, 247, 0.16);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.22);
+}
+
+.neon-line-svg path {
+  stroke: #a855f7;
+}
+
+.get-started-btn-design6,
+.ag-primary-cta,
+.cta-circle-btn,
+.primary-btn,
+.image1-btn {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  color: #ffffff;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.42);
+}
+
+.get-started-btn-design6:hover,
+.ag-primary-cta:hover,
+.cta-circle-btn:hover,
+.primary-btn:hover,
+.image1-btn:hover {
+  background: linear-gradient(135deg, #c084fc 0%, #9333ea 100%);
+  color: #ffffff;
+  box-shadow: 0 0 32px rgba(168, 85, 247, 0.62);
+}
+
+.ag-artwork-text-left .cyan-highlight,
+.pathway-word,
+.badge-sparkle,
+.ag-section-badge,
+.hud-label {
+  color: #c084fc;
+  text-shadow: 0 0 15px rgba(168, 85, 247, 0.55);
+}
+
+.cyan-electric-text {
+  background: linear-gradient(135deg, #c084fc 0%, #e879f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.5));
+}
+
+.ag-glass-badge,
+.ag-feature-pill,
+.ag-hud-card,
+.ag-hud-panel,
+.ag-game-card,
+.ag-floating-cta-badge,
+.ag-feature-card,
+.ag-bottom-cta-box,
+.image1-plan-card {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.ag-feature-pill:hover,
+.ag-game-card:hover,
+.ag-hud-card:hover,
+.ag-feature-card:hover,
+.ag-floating-cta-badge:hover,
+.image1-plan-card:hover {
+  border-color: rgba(192, 132, 252, 0.65);
+  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.24);
+}
+
+.ag-stats-bar-wrapper,
+.ag-stat-item,
+.footer,
+.footer-col a:hover {
+  border-color: rgba(168, 85, 247, 0.24);
+}
+
+.feat-icon-ring,
+.eyebrow,
+.plan-pill-tag {
+  background-color: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.32);
+}
+
+.ag-bottom-cta-box {
+  background: linear-gradient(135deg, rgba(25, 10, 42, 0.92), rgba(45, 15, 68, 0.88));
+  box-shadow: 0 15px 40px rgba(168, 85, 247, 0.18);
+}
+
+.billing-toggle-pill .toggle-btn.active {
+  background: linear-gradient(135deg, #581c87 0%, #9333ea 100%);
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
+}
+
+.circuit-track.active,
+.electric-pulse.pulse-left-1,
+.pulse-right-3,
+.circuit-node-dot,
+.chip-pin {
+  stroke: #a855f7;
+  fill: #a855f7;
+  color: #a855f7;
+}
+
+.circuit-track.active {
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.9));
+}
+
+.notice-banner.info,
+.preset-pill.active-exact {
+  background: rgba(168, 85, 247, 0.14);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #d8b4fe;
+}
+
+.input-with-icon input,
+.form-field input,
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="url"],
+select,
+textarea {
+  border-color: rgba(168, 85, 247, 0.32) !important;
+}
+
+.input-with-icon input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.35) !important;
+}
+
+.footer {
+  border-top-color: rgba(168, 85, 247, 0.25);
+}
+
+.hero-video-overlay {
+  background:
+    linear-gradient(180deg, rgba(7, 10, 19, 0.1) 0%, rgba(7, 10, 19, 0.4) 50%, rgba(7, 10, 19, 0.85) 85%, #070a13 100%),
+    linear-gradient(90deg, rgba(7, 10, 19, 0.88) 0%, rgba(7, 10, 19, 0.6) 45%, rgba(7, 10, 19, 0.25) 100%),
+    radial-gradient(ellipse at center, transparent 35%, rgba(7, 10, 19, 0.75) 100%),
+    radial-gradient(circle at 75% 30%, rgba(168, 85, 247, 0.14) 0%, transparent 60%),
+    rgba(7, 10, 19, 0.45);
+}
+
+[style*="color: #38bdf8"],
+[style*="color:#38bdf8"],
+[style*="color: rgb(56, 189, 248)"],
+[style*="color: #60a5fa"],
+[style*="color: rgb(96, 165, 250)"],
+[style*="color: #7dd3fc"],
+[style*="color: rgb(125, 211, 252)"] {
+  color: #c084fc !important;
+}
+
+[style*="background: rgba(56, 189, 248"],
+[style*="background-color: rgba(56, 189, 248"],
+[style*="background: rgba(2, 132, 199"],
+[style*="background-color: rgba(2, 132, 199"] {
+  background: rgba(168, 85, 247, 0.16) !important;
+}
+
+[style*="border: 1px solid rgba(56, 189, 248"],
+[style*="border: 1px dashed rgba(56, 189, 248"],
+[style*="border-color: rgba(56, 189, 248"] {
+  border-color: rgba(168, 85, 247, 0.45) !important;
+}
