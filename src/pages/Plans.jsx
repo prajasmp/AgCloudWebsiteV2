@@ -18,7 +18,6 @@ export default function Plans() {
   }, [routeCategory]);
 
   const activeGroup = CATEGORY_GROUPS.find(group => group.categories.includes(activeCategory)) || CATEGORY_GROUPS[0];
-  const billingCycle = activeCategory === 'domains' ? 'year' : 'month';
 
   const selectCategory = (category) => {
     setActiveCategory(category);
@@ -203,18 +202,6 @@ export default function Plans() {
               ))}
             </div>
           )}
-
-          <div className="billing-pill-container" aria-label="Billing period">
-            <button className={`pill-option ${billingCycle === 'month' ? 'active' : ''}`} disabled={billingCycle !== 'month'}>
-              Month
-            </button>
-            <button className="pill-option" disabled>
-              Quarter
-            </button>
-            <button className={`pill-option ${billingCycle === 'year' ? 'active' : ''}`} disabled={billingCycle !== 'year'}>
-              Year
-            </button>
-          </div>
 
           <div className="search-box">
             <Search size={18} className="search-icon" />
