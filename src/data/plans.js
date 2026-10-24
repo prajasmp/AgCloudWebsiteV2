@@ -50,17 +50,17 @@ const vpsPlan = (category, processor, ram, price, cores, storage, badge) => ({
 });
 
 export const DOMAIN_PLANS = [
-  { id: "domain-fun", category: "domains", name: ".fun", price: 200, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-net", category: "domains", name: ".net", price: 1299, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-com", category: "domains", name: ".com", price: 1499, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-in", category: "domains", name: ".in", price: 899, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-xyz", category: "domains", name: ".xyz", price: 499, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-io", category: "domains", name: ".io", price: 3299, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-online", category: "domains", name: ".online", price: 129, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-blog", category: "domains", name: ".blog", price: 259, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-shop", category: "domains", name: ".shop", price: 119, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-org", category: "domains", name: ".org", price: 949, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
-  { id: "domain-info", category: "domains", name: ".info", price: 419, period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] }
+  { id: "domain-fun", category: "domains", name: ".fun", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-net", category: "domains", name: ".net", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-com", category: "domains", name: ".com", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-in", category: "domains", name: ".in", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-xyz", category: "domains", name: ".xyz", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-io", category: "domains", name: ".io", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-online", category: "domains", name: ".online", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-blog", category: "domains", name: ".blog", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-shop", category: "domains", name: ".shop", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-org", category: "domains", name: ".org", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] },
+  { id: "domain-info", category: "domains", name: ".info", price: "N/A", period: "year", features: ["Domain registration", "DNS management", "Create a Discord ticket to purchase"] }
 ];
 
 export const GAME_PLANS = [

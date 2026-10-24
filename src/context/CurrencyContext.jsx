@@ -13,6 +13,7 @@ export function CurrencyProvider({ children }) {
   const formatPrice = (amount, period = '') => {
     if (amount === undefined || amount === null) return 'Free';
     const periodSuffix = period ? `/${period}` : '';
+    if (typeof amount === 'string') return `${amount}${periodSuffix}`;
     if (currency === 'USD') {
       const usdVal = (amount * rate).toFixed(2);
       return `$${usdVal}${periodSuffix}`;
