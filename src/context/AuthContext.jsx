@@ -47,19 +47,19 @@ export function AuthProvider({ children }) {
       const res = await syncUserWithBackend(userObj);
       if (res && res.role) {
         setUserRole(res.role);
-        localStorage.setItem('ag_cloud_user_role', res.role);
+        localStorage.setItem('novexhost_user_role', res.role);
       } else if (userObj.email && (
         userObj.email.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase() ||
-        userObj.email.toLowerCase() === 'anand@agcloud.fun'
+        userObj.email.toLowerCase() === 'admin@novexhost.com'
       )) {
         setUserRole('owner');
-        localStorage.setItem('ag_cloud_user_role', 'owner');
+        localStorage.setItem('novexhost_user_role', 'owner');
       }
     } catch (err) {
       console.warn('User database sync warning:', err.message || err);
       if (userObj.email && userObj.email.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
         setUserRole('owner');
-        localStorage.setItem('ag_cloud_user_role', 'owner');
+        localStorage.setItem('novexhost_user_role', 'owner');
       }
     }
   };
@@ -122,6 +122,9 @@ export function AuthProvider({ children }) {
     setUser(null);
     setUserRole('customer');
     localStorage.removeItem('ag_cloud_user');
+    localStorage.removeItem('novexhost_user');
+    localStorage.removeItem('novexhost_user_role');
+    localStorage.removeItem('ag_cloud_user');
     localStorage.removeItem('ag_cloud_user_role');
   };
 
@@ -134,7 +137,8 @@ export function AuthProvider({ children }) {
     userRole === 'owner' ||
     userRole === 'admin' ||
     (user?.email && (
-      user.email.toLowerCase() === 'anand@agcloud.fun' ||
+      user.email.toLowerCase() === 'admin@novexhost.com' ||
+      user.email.toLowerCase() === 'notxlaksly@gmail.com' ||
       user.email.toLowerCase() === 'dexomine2000@gmail.com'
     ))
   );

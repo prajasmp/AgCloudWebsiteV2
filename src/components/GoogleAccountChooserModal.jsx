@@ -18,10 +18,10 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSelectAcc
       photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80'
     },
     {
-      name: 'AG Support',
-      email: 'community@agcloud.fun',
+      name: 'NOVEXHOST Admin',
+      email: 'admin@novexhost.com',
       avatarBg: '#0284c7',
-      initial: 'A',
+      initial: 'N',
       photoURL: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80'
     }
   ];

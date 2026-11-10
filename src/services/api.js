@@ -11,7 +11,7 @@ async function getAuthToken() {
   }
 
   try {
-    const savedUserStr = localStorage.getItem('ag_cloud_user');
+    const savedUserStr = localStorage.getItem('novexhost_user') || localStorage.getItem('ag_cloud_user');
     if (savedUserStr) {
       const savedUser = JSON.parse(savedUserStr);
       if (savedUser && savedUser.uid) {
@@ -61,6 +61,7 @@ export async function apiFetch(endpoint, options = {}) {
   return data;
 }
 
+// ================= CUSTOMER PAYMENT & ORDER API =================
 export async function createPaymentOrder(orderData) {
   return await apiFetch('/api/payments/create', {
     method: 'POST',
@@ -68,25 +69,37 @@ export async function createPaymentOrder(orderData) {
   });
 }
 
-export async function trackOrder(email, orderId = '') {
-  let url = `/api/orders/track?email=${encodeURIComponent(email)}`;
-  if (orderId && orderId.trim()) {
-    url += `&orderId=${encodeURIComponent(orderId.trim())}`;
-  }
-  return await apiFetch(url);
-}
-
-export async function approveOrRejectOrder(orderId, action, rejectionReason = '') {
-  return await apiFetch('/api/admin/approve-order', {
+export async function verifyPayment(paymentData) {
+  return await apiFetch('/api/payments/verify', {
     method: 'POST',
-    body: JSON.stringify({ orderId, action, rejectionReason })
+    body: JSON.stringify(paymentData)
   });
 }
 
-export async function checkPaymentStatus(orderId) {
-  return await apiFetch(`/api/payments/status?orderId=${encodeURIComponent(orderId)}`);
+export async function trackOrder(email = '', orderId = '', token = '') {
+  const params = new URLSearchParams();
+  if (token && token.trim()) params.append('token', token.trim());
+  if (email && email.trim()) params.append('email', email.trim());
+  if (orderId && orderId.trim()) params.append('orderId', orderId.trim());
+
+  return await apiFetch(`/api/orders/track?${params.toString()}`);
 }
 
+export async function checkPaymentStatus(orderId, token = '') {
+  let url = `/api/payments/status?orderId=${encodeURIComponent(orderId)}`;
+  if (token) url += `&token=${encodeURIComponent(token)}`;
+  return await apiFetch(url);
+}
+
+// ================= USER & AUTH API =================
+export async function syncUserWithBackend(userObj) {
+  return await apiFetch('/api/auth/sync-user', {
+    method: 'POST',
+    body: JSON.stringify(userObj)
+  });
+}
+
+// ================= CUSTOMER PANEL API =================
 export async function fetchMyOrders() {
   return await apiFetch('/api/my-orders');
 }
@@ -111,7 +124,6 @@ export async function fetchServerConsoleToken(serverId) {
 }
 
 export async function sendConsoleCommand(serverId, command) {
-
   return await apiFetch('/api/my-servers/command', {
     method: 'POST',
     body: JSON.stringify({ serverId, command })
@@ -161,6 +173,7 @@ export async function renameServerName(serverId, name) {
   });
 }
 
+// ================= ADMIN CONSOLE API =================
 export async function fetchAdminOrders() {
   return await apiFetch('/api/admin/orders');
 }
@@ -185,11 +198,41 @@ export async function fetchAdminMetrics() {
   return await apiFetch('/api/admin/metrics');
 }
 
+export async function fetchAdminProducts() {
+  return await apiFetch('/api/admin/products');
+}
+
+export async function updateAdminProductPrice(planId, price) {
+  return await apiFetch('/api/admin/products', {
+    method: 'POST',
+    body: JSON.stringify({ planId, price })
+  });
+}
+
+export async function fetchAdminSettings() {
+  return await apiFetch('/api/admin/settings');
+}
+
+export async function retryAdminDeployment(orderId) {
+  return await apiFetch('/api/admin/retry-deployment', {
+    method: 'POST',
+    body: JSON.stringify({ orderId })
+  });
+}
+
 export async function sendAdminServerAction(serverId, action) {
   return await apiFetch('/api/admin/server-action', {
     method: 'POST',
     body: JSON.stringify({ serverId, action })
   });
+}
+
+export async function fetchAdminUsersList() {
+  return await apiFetch('/api/admin/users');
+}
+
+export async function fetchAdminInfrastructure() {
+  return await apiFetch('/api/admin/infrastructure');
 }
 
 export async function fetchAdminAdminUsers() {
@@ -209,17 +252,9 @@ export async function removeAdminUser(emailOrId) {
   });
 }
 
-export async function fetchAdminUsersList() {
-  return await apiFetch('/api/admin/users');
-}
-
-export async function fetchAdminInfrastructure() {
-  return await apiFetch('/api/admin/infrastructure');
-}
-
-export async function syncUserWithBackend(userObj) {
-  return await apiFetch('/api/auth/sync-user', {
+export async function approveOrRejectOrder(orderId, action, rejectionReason = '') {
+  return await apiFetch('/api/admin/approve-order', {
     method: 'POST',
-    body: JSON.stringify(userObj)
+    body: JSON.stringify({ orderId, action, rejectionReason })
   });
 }

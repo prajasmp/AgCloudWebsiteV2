@@ -25,14 +25,14 @@ export default function BackgroundAnimation() {
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    const particles = Array.from({ length: 60 }, () => ({
+    const particles = Array.from({ length: 55 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
       radius: Math.random() * 2.2 + 0.6,
       speedX: (Math.random() - 0.5) * 0.5,
       speedY: (Math.random() - 0.5) * 0.6 - 0.15,
       alpha: Math.random() * 0.65 + 0.25,
-      color: Math.random() > 0.5 ? '#d946ef' : '#00C8FF',
+      color: Math.random() > 0.5 ? '#00f2fe' : '#06b6d4',
       pulseSpeed: Math.random() * 0.03 + 0.015,
       angle: Math.random() * Math.PI * 2
     }));
@@ -45,7 +45,7 @@ export default function BackgroundAnimation() {
       mouse.x += (mouse.targetX - mouse.x) * 0.04;
       mouse.y += (mouse.targetY - mouse.y) * 0.04;
 
-      ctx.fillStyle = '#020711';
+      ctx.fillStyle = '#030712';
       ctx.fillRect(0, 0, width, height);
 
       const leftShift = Math.sin(tick * 0.7) * 40;
@@ -59,8 +59,8 @@ export default function BackgroundAnimation() {
         height * 0.4 + leftShift,
         550
       );
-      leftGrad.addColorStop(0, 'rgba(217, 70, 239, 0.22)');
-      leftGrad.addColorStop(0.5, 'rgba(192, 132, 252, 0.08)');
+      leftGrad.addColorStop(0, 'rgba(6, 182, 212, 0.18)');
+      leftGrad.addColorStop(0.5, 'rgba(8, 145, 178, 0.07)');
       leftGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = leftGrad;
       ctx.fillRect(0, 0, width, height);
@@ -73,15 +73,15 @@ export default function BackgroundAnimation() {
         height * 0.5 - rightShift,
         600
       );
-      rightGrad.addColorStop(0, 'rgba(0, 200, 255, 0.24)');
-      rightGrad.addColorStop(0.5, 'rgba(22, 139, 255, 0.09)');
+      rightGrad.addColorStop(0, 'rgba(0, 242, 254, 0.22)');
+      rightGrad.addColorStop(0.5, 'rgba(2, 132, 199, 0.08)');
       rightGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = rightGrad;
       ctx.fillRect(0, 0, width, height);
 
       const mouseGrad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 420);
-      mouseGrad.addColorStop(0, 'rgba(0, 200, 255, 0.14)');
-      mouseGrad.addColorStop(0.5, 'rgba(217, 70, 239, 0.07)');
+      mouseGrad.addColorStop(0, 'rgba(0, 242, 254, 0.12)');
+      mouseGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.05)');
       mouseGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = mouseGrad;
       ctx.fillRect(0, 0, width, height);
@@ -106,9 +106,9 @@ export default function BackgroundAnimation() {
             ctx.arc(x, y, 1.2 + wave * 0.4, 0, Math.PI * 2);
 
             if (distLeft < distRight) {
-              ctx.fillStyle = `rgba(217, 70, 239, ${opacity * 1.6})`;
+              ctx.fillStyle = `rgba(6, 182, 212, ${opacity * 1.5})`;
             } else {
-              ctx.fillStyle = `rgba(0, 200, 255, ${opacity * 1.6})`;
+              ctx.fillStyle = `rgba(0, 242, 254, ${opacity * 1.5})`;
             }
             ctx.fill();
           }

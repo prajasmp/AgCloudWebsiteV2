@@ -8,56 +8,56 @@ export default function ElectricNodeDiagram() {
     {
       id: 'game',
       title: 'Game Servers',
-      sub: 'Minecraft & CS2',
+      sub: 'Minecraft, CS2 & Palworld',
       icon: Gamepad2,
       side: 'left',
       yOffset: 40,
-      color: '#a855f7'
+      color: '#00f2fe'
     },
     {
       id: 'vps',
-      title: 'VPS Compute',
-      sub: 'Intel, AMD & Ryzen',
+      title: 'KVM Cloud VPS',
+      sub: 'Intel, AMD & Ryzen 7950X',
       icon: Server,
       side: 'left',
       yOffset: 180,
-      color: '#f97316'
+      color: '#06b6d4'
     },
     {
       id: 'bot',
       title: 'Bot Hosting',
-      sub: 'Node.js & Python 24/7',
+      sub: 'Discord & Python 24/7',
       icon: Bot,
       side: 'left',
       yOffset: 320,
-      color: '#a855f7'
+      color: '#38bdf8'
     },
     {
       id: 'ddos',
-      title: 'Anti-DDoS Shield',
-      sub: 'L3/L4/L7 Mitigation',
+      title: '1.2 Tbps Anti-DDoS',
+      sub: 'L3/L4/L7 Volumetric Shield',
       icon: Shield,
       side: 'right',
       yOffset: 40,
-      color: '#34d399'
+      color: '#10b981'
     },
     {
       id: 'latency',
-      title: 'Low Latency POP',
-      sub: 'India & Asia Routes',
+      title: 'Ultra-Low Ping POP',
+      sub: 'India, SG & Global Routes',
       icon: Zap,
       side: 'right',
       yOffset: 180,
-      color: '#fbbf24'
+      color: '#00f2fe'
     },
     {
       id: 'dns',
       title: 'Domains & DNS',
-      sub: '.fun, .com, .in DNS',
+      sub: '.fun, .com, .in Anycast DNS',
       icon: Globe,
       side: 'right',
       yOffset: 320,
-      color: '#c084fc'
+      color: '#06b6d4'
     }
   ];
 
@@ -65,8 +65,8 @@ export default function ElectricNodeDiagram() {
     <div className="electric-diagram-wrapper glass-card glow-border">
       <div className="diagram-header text-center">
         <span className="badge-subtitle">Infrastructure Core</span>
-        <h2>High-Speed Edge Network Driven by AG</h2>
-        <p>Real-time telemetry and lightning-fast packet routing across all hosting layers.</p>
+        <h2>High-Speed Edge Network Driven by NOVEXHOST</h2>
+        <p>Real-time telemetry, automated server provisioning, and lightning-fast packet routing across all hosting layers.</p>
       </div>
 
       <div className="diagram-container">
@@ -74,9 +74,9 @@ export default function ElectricNodeDiagram() {
         <svg className="circuit-svg" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id="cyanElectric" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#a855f7" stopOpacity="1" />
-              <stop offset="50%" stopColor="#d946ef" stopOpacity="1" />
-              <stop offset="100%" stopColor="#a855f7" stopOpacity="1" />
+              <stop offset="0%" stopColor="#00f2fe" stopOpacity="1" />
+              <stop offset="50%" stopColor="#06b6d4" stopOpacity="1" />
+              <stop offset="100%" stopColor="#0284c7" stopOpacity="1" />
             </linearGradient>
 
             <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
@@ -160,8 +160,8 @@ export default function ElectricNodeDiagram() {
             <div className="chip-pin pin-right-2" />
 
             <div className="chip-content">
-              <span className="chip-ag-text">AG</span>
-              <span className="chip-subtext">CORE ENGINE</span>
+              <span className="chip-ag-text">NVX</span>
+              <span className="chip-subtext">NOVEX CORE</span>
             </div>
           </div>
         </div>

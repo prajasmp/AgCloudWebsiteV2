@@ -24,7 +24,7 @@ export default function Panel() {
     } catch (err) {
       console.error('Failed to fetch panel servers:', err);
       if (!isSilent) {
-        setErrorMsg(err.message || 'Failed to load servers from panel.agcloud.fun');
+        setErrorMsg(err.message || 'Failed to load servers from control panel');
       }
     } finally {
       if (!isSilent) setLoading(false);
@@ -57,7 +57,7 @@ export default function Panel() {
   };
 
   if (authLoading) {
-    return <div className="page-loader">Loading AG Cloud Panel...</div>;
+    return <div className="page-loader">Loading NOVEXHOST Panel...</div>;
   }
 
   if (!user) {
@@ -90,10 +90,10 @@ export default function Panel() {
 
         <div className="section-heading left" style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <span className="badge-subtitle">Customer Control Panel · panel.agcloud.fun</span>
+            <span className="badge-subtitle">Customer Control Panel &bull; NOVEXHOST</span>
             <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Manage Account / My Servers</h1>
             <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-              Real-time servers synced securely from panel.agcloud.fun for <strong>{user.email}</strong>.
+              Real-time servers synced securely for <strong>{user.email}</strong>.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -124,17 +124,17 @@ export default function Panel() {
           {loading ? (
             <div className="glass-card text-center" style={{ padding: '3rem', color: '#94a3b8', gridColumn: '1 / -1' }}>
               <div className="spinner-ring" style={{ width: '40px', height: '40px', margin: '0 auto 1rem', borderTopColor: '#38bdf8' }} />
-              Syncing your servers from panel.agcloud.fun...
+              Syncing your servers from NOVEXHOST control panel...
             </div>
           ) : servers.length === 0 ? (
             <div className="empty-box glass-card text-center" style={{ padding: '3.5rem 2rem', gridColumn: '1 / -1' }}>
               <Server size={44} className="text-muted" style={{ margin: '0 auto 1rem', color: '#64748b' }} />
               <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#f8fafc', marginBottom: '0.5rem' }}>No servers found on your account.</h2>
               <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
-                You do not have any Minecraft servers associated with <strong>{user.email}</strong> on panel.agcloud.fun.
+                You do not have any active servers associated with <strong>{user.email}</strong>.
               </p>
               <Link to="/plans" className="primary-btn small glow-btn">
-                Browse Minecraft Hosting Plans
+                Browse Minecraft &amp; VPS Hosting Plans
               </Link>
             </div>
           ) : (
@@ -144,7 +144,7 @@ export default function Panel() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
                   <div>
                     <span className="badge-subtitle" style={{ fontSize: '0.72rem', letterSpacing: '0.5px' }}>
-                      NODE #{server.node_id || 1} · ID: {server.panel_server_id}
+                      NODE #{server.node_id || 1} &bull; ID: {server.panel_server_id}
                     </span>
                     <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', marginTop: '0.2rem' }}>
                       {server.server_name}
@@ -156,7 +156,7 @@ export default function Panel() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', background: 'rgba(0, 0, 0, 0.3)', padding: '0.85rem', borderRadius: '10px' }}>
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ color: '#64748b', fontSize: '0.72rem', display: 'block', marginBottom: '2px' }}>RAM</span>
-                    <strong style={{ color: '#38bdf8', fontSize: '0.92rem' }}>
+                    <strong style={{ color: '#00f2fe', fontSize: '0.92rem' }}>
                       {server.memory_used_mb !== undefined && server.memory_used_mb > 0
                         ? `${(server.memory_used_mb / 1024).toFixed(1)} / `
                         : ''}
@@ -183,10 +183,10 @@ export default function Panel() {
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.15)', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.88rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ background: 'rgba(0, 242, 254, 0.05)', border: '1px solid rgba(0, 242, 254, 0.15)', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.88rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div>
                     <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'block' }}>Server Address (IP:Port):</span>
-                    <code style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.95rem' }}>
+                    <code style={{ color: '#00f2fe', fontWeight: 800, fontSize: '0.95rem' }}>
                       {server.ip || '103.195.100.42'}:{server.port || 25565}
                     </code>
                   </div>
@@ -200,13 +200,7 @@ export default function Panel() {
 
                 <div style={{ marginTop: 'auto', paddingTop: '0.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <a
-                    href={
-                      server.identifier && !server.identifier.includes('fallback')
-                        ? `https://panel.agcloud.fun/server/${server.identifier}`
-                        : server.panel_uuid && !server.panel_uuid.includes('fallback')
-                        ? `https://panel.agcloud.fun/server/${server.panel_uuid}`
-                        : 'https://panel.agcloud.fun'
-                    }
+                    href="https://panel.novexhost.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="primary-btn glow-btn small"
@@ -239,7 +233,7 @@ export default function Panel() {
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.5rem' }}>Confirm Server Deletion</h2>
             <p style={{ color: '#cbd5e1', fontSize: '0.88rem', marginBottom: '1.25rem', lineHeight: '1.4' }}>
               Are you sure you want to delete server <strong>{deleteModalServer.server_name}</strong> (ID: <code>{deleteModalServer.panel_server_id}</code>)?
-              <br /><strong style={{ color: '#f87171' }}>This will permanently remove the server from panel.agcloud.fun.</strong>
+              <br /><strong style={{ color: '#f87171' }}>This will permanently remove the server from the cluster.</strong>
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>

@@ -2,10 +2,11 @@ import React, { useState, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import NovexLogo from './NovexLogo';
 import {
   Menu, X, LogOut, ShieldCheck, UserPlus,
   Server, Loader2, ChevronDown, Headphones, FileText,
-  RefreshCcw, PackageCheck
+  RefreshCcw, PackageCheck, Zap, Shield, HelpCircle
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -42,18 +43,14 @@ export default function Navbar() {
   };
 
   const defaultAvatar = (name) =>
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'AG')}&background=a855f7&color=020711&bold=true`;
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Admin')}&background=06b6d4&color=020711&bold=true`;
 
   return (
     <header className="nav-wrap-design6">
       <nav className="nav container design6-nav">
 
         <Link className="brand-design6" to="/">
-          <img src="/assets/agcloud-logo.png" alt="AG Cloud Logo" className="brand-logo-design6" />
-          <div className="brand-text-block">
-            <span className="brand-title">AG CLOUD</span>
-            <span className="brand-subtitle">Limitless Possibilities</span>
-          </div>
+          <NovexLogo size={36} showText={true} />
         </Link>
 
         <button
@@ -70,7 +67,12 @@ export default function Navbar() {
           </NavLink>
 
           <NavLink to="/plans" onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive ? 'active' : '')}>
-            Plans
+            Hosting Plans
+          </NavLink>
+
+          <NavLink to="/track-order" onClick={() => setMobileOpen(false)} className={({ isActive }) => `track-order-link ${isActive ? 'active' : ''}`}>
+            <PackageCheck size={15} style={{ display: 'inline', marginRight: '6px', color: '#00f2fe' }} />
+            Track Order
           </NavLink>
 
           <div
@@ -91,8 +93,8 @@ export default function Navbar() {
                 <Link to="/contact" onClick={() => { setSupportDropdownOpen(false); setMobileOpen(false); }}>
                   <Headphones size={16} className="menu-icon cyan" />
                   <div>
-                    <span className="menu-title">Contact Us</span>
-                    <span className="menu-desc">24/7 specialized human support</span>
+                    <span className="menu-title">24/7 Support</span>
+                    <span className="menu-desc">Specialized technical engineers</span>
                   </div>
                 </Link>
 
@@ -100,7 +102,7 @@ export default function Navbar() {
                   <FileText size={16} className="menu-icon cyan" />
                   <div>
                     <span className="menu-title">Terms of Service</span>
-                    <span className="menu-desc">Rules, SLA & hosting terms</span>
+                    <span className="menu-desc">Hosting SLA & acceptable use</span>
                   </div>
                 </Link>
 
@@ -108,15 +110,15 @@ export default function Navbar() {
                   <RefreshCcw size={16} className="menu-icon cyan" />
                   <div>
                     <span className="menu-title">Refund Policy</span>
-                    <span className="menu-desc">Guarantees & refund process</span>
+                    <span className="menu-desc">Razorpay guarantees & terms</span>
                   </div>
                 </Link>
 
-                <Link to="/track-order" onClick={() => { setSupportDropdownOpen(false); setMobileOpen(false); }}>
-                  <PackageCheck size={16} className="menu-icon cyan" />
+                <Link to="/privacy" onClick={() => { setSupportDropdownOpen(false); setMobileOpen(false); }}>
+                  <Shield size={16} className="menu-icon cyan" />
                   <div>
-                    <span className="menu-title">Track Order</span>
-                    <span className="menu-desc">Lookup payment status by Order ID</span>
+                    <span className="menu-title">Privacy Policy</span>
+                    <span className="menu-desc">Customer data protection</span>
                   </div>
                 </Link>
               </div>
@@ -129,7 +131,7 @@ export default function Navbar() {
                 Dashboard
               </NavLink>
               <NavLink to="/panel" onClick={() => setMobileOpen(false)} className="highlight-panel-link">
-                <Server size={14} style={{ display: 'inline', marginRight: '4px' }} /> My Servers
+                <Server size={14} style={{ display: 'inline', marginRight: '4px' }} /> Control Panel
               </NavLink>
             </>
           )}
@@ -145,7 +147,7 @@ export default function Navbar() {
                 onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
               >
                 <ShieldCheck size={15} className="admin-btn-icon" />
-                <span>Admin</span>
+                <span>Admin Console</span>
                 <ChevronDown size={14} className={`dropdown-arrow ${adminDropdownOpen ? 'open' : ''}`} />
               </button>
 
@@ -154,16 +156,24 @@ export default function Navbar() {
                   <Link to="/admin" onClick={() => { setAdminDropdownOpen(false); setMobileOpen(false); }}>
                     <ShieldCheck size={16} className="menu-icon cyan" />
                     <div>
-                      <span className="menu-title">Admin Console</span>
-                      <span className="menu-desc">Review & manage submitted orders</span>
+                      <span className="menu-title">Admin Dashboard</span>
+                      <span className="menu-desc">Orders, deployments & revenue</span>
+                    </div>
+                  </Link>
+
+                  <Link to="/admin?tab=products" onClick={() => { setAdminDropdownOpen(false); setMobileOpen(false); }}>
+                    <Zap size={16} className="menu-icon cyan" />
+                    <div>
+                      <span className="menu-title">Product Pricing</span>
+                      <span className="menu-desc">Manage plans & price rates</span>
                     </div>
                   </Link>
 
                   <Link to="/admin-emails" onClick={() => { setAdminDropdownOpen(false); setMobileOpen(false); }}>
                     <UserPlus size={16} className="menu-icon green" style={{ color: '#34d399' }} />
                     <div>
-                      <span className="menu-title" style={{ color: '#34d399' }}>Admin Emails</span>
-                      <span className="menu-desc">Add & delete admin access emails</span>
+                      <span className="menu-title" style={{ color: '#34d399' }}>Admin Team</span>
+                      <span className="menu-desc">Manage admin access permissions</span>
                     </div>
                   </Link>
                 </div>
@@ -197,15 +207,15 @@ export default function Navbar() {
               <img
                 className="avatar"
                 src={user.photoURL || defaultAvatar(user.displayName)}
-                alt={user.displayName}
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.target.src = defaultAvatar(user.displayName);
-                }}
+                alt={user.displayName || 'User'}
               />
-              <span className="user-name-short">{user.displayName?.split(' ')[0]}</span>
-              <button className="ghost-btn logout-btn" onClick={logout} title="Sign Out">
-                <LogOut size={15} />
+              <button
+                className="logout-btn-design6"
+                onClick={logout}
+                title="Sign Out"
+                aria-label="Sign Out"
+              >
+                <LogOut size={16} />
               </button>
             </div>
           ) : (
@@ -213,35 +223,22 @@ export default function Navbar() {
               className="login-btn-design6"
               onClick={loginWithGoogle}
               disabled={authLoading}
+              title="Admin / Staff Sign In"
             >
-              {authLoading ? <Loader2 size={15} className="spin-icon" /> : 'Login'}
+              {authLoading ? (
+                <Loader2 size={16} className="spin-loader" />
+              ) : (
+                <>
+                  <ShieldCheck size={16} />
+                  <span>Admin Sign In</span>
+                </>
+              )}
             </button>
           )}
 
-          <Link to="/plans" className="get-started-btn-design6">
-            Get Started →
-          </Link>
         </div>
-      </nav>
 
-      <div className="neon-line-container">
-        <svg className="neon-line-svg" viewBox="0 0 1200 12" preserveAspectRatio="none">
-          <filter id="neonGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <path
-            d="M 0 2 H 160 L 180 10 H 1020 L 1040 2 H 1200"
-            fill="none"
-            stroke="#A855F7"
-            strokeWidth="2.5"
-            filter="url(#neonGlowFilter)"
-          />
-        </svg>
-      </div>
+      </nav>
     </header>
   );
 }

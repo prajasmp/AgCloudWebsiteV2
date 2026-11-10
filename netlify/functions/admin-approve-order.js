@@ -101,7 +101,7 @@ export async function handler(event, context) {
     let serverRecord = null;
 
     try {
-      const targetEmail = order.user_email || order.userEmail || order.delivery_email || order.deliveryEmail || order.contact_email || order.contactEmail || order.email || 'customer@agcloud.fun';
+      const targetEmail = order.user_email || order.userEmail || order.delivery_email || order.deliveryEmail || order.contact_email || order.contactEmail || order.email || 'customer@novexhost.com';
       const targetUid = order.owner_uid || order.ownerUid || order.userId || order.user_id || 'uid_customer';
       const targetName = order.user_name || order.userName || order.payer_name || order.payerName || 'Customer';
 

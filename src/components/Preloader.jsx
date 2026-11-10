@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import NovexLogo from './NovexLogo';
 
 export default function Preloader({ onComplete }) {
   const [progress, setProgress] = useState(0);
@@ -198,8 +199,8 @@ export default function Preloader({ onComplete }) {
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.strokeStyle = p1.colorType === 'orange' || p2.colorType === 'orange'
-              ? `rgba(249, 115, 22, ${alpha})`
-              : `rgba(168, 85, 247, ${alpha})`;
+              ? `rgba(0, 242, 254, ${alpha})`
+              : `rgba(6, 182, 212, ${alpha})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -208,13 +209,13 @@ export default function Preloader({ onComplete }) {
 
       for (let i = 0; i < projectedNodes.length; i++) {
         const p = projectedNodes[i];
-        const isOrange = p.colorType === 'orange';
-        const colorHex = isOrange ? '#d946ef' : '#a855f7';
+        const isCyan = p.colorType === 'orange';
+        const colorHex = isCyan ? '#00f2fe' : '#06b6d4';
         const alpha = Math.max(0.2, Math.min(1, (p.z + 250) / 450));
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = isOrange ? `rgba(217, 70, 239, ${alpha * 0.2})` : `rgba(168, 85, 247, ${alpha * 0.2})`;
+        ctx.fillStyle = isCyan ? `rgba(0, 242, 254, ${alpha * 0.25})` : `rgba(6, 182, 212, ${alpha * 0.25})`;
         ctx.fill();
 
         ctx.beginPath();
@@ -242,7 +243,7 @@ export default function Preloader({ onComplete }) {
 
         ctx.beginPath();
         ctx.arc(px, py, Math.max(0.5, pt.size * scale * 0.6), 0, Math.PI * 2);
-        ctx.fillStyle = i % 2 === 0 ? `rgba(168, 85, 247, ${pt.alpha})` : `rgba(217, 70, 239, ${pt.alpha})`;
+        ctx.fillStyle = i % 2 === 0 ? `rgba(0, 242, 254, ${pt.alpha})` : `rgba(6, 182, 212, ${pt.alpha})`;
         ctx.fill();
       }
 
@@ -267,9 +268,8 @@ export default function Preloader({ onComplete }) {
       <canvas ref={canvasRef} className="lusion-canvas" />
 
       <div className="lusion-ui-container">
-        <div className="lusion-logo-wrapper">
-          <img src="/assets/agcloud-logo.png" alt="AG Cloud" className="lusion-logo-img" />
-          <div className="lusion-logo-ring" />
+        <div className="lusion-logo-wrapper" style={{ width: 'auto', height: 'auto', marginBottom: '1.25rem' }}>
+          <NovexLogo size={52} showText={true} />
         </div>
 
         <div className="lusion-percentage-display">
@@ -286,9 +286,9 @@ export default function Preloader({ onComplete }) {
 
         <div className="lusion-status-text">
           {progress < 30 && 'INITIALIZING HIGH-SPEED INFRASTRUCTURE...'}
-          {progress >= 30 && progress < 70 && 'SYNCHRONIZING ASIA CLOUD NODES...'}
-          {progress >= 70 && progress < 100 && 'OPTIMIZING NETWORK ROUTES...'}
-          {progress === 100 && 'AG CLOUD SYSTEM READY'}
+          {progress >= 30 && progress < 70 && 'SYNCHRONIZING GLOBAL CLOUD NODES...'}
+          {progress >= 70 && progress < 100 && 'OPTIMIZING NETWORK & DDOS SHIELDS...'}
+          {progress === 100 && 'NOVEXHOST PLATFORM READY'}
         </div>
       </div>
     </div>

@@ -1,35 +1,80 @@
+import { getAllOrdersFromStore, getOrderByTokenFromStore, getServerByIdFromStore } from './lib/devStore.js';
 import { supabaseAdmin, isSupabaseAdminConfigured } from './lib/supabaseAdmin.js';
-import { getAllOrdersFromStore } from './lib/devStore.js';
 
 export async function handler(event, context) {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
 
   let email = '';
   let orderId = '';
+  let token = '';
 
   if (event.httpMethod === 'GET') {
     const params = event.queryStringParameters || {};
     email = params.email || '';
     orderId = params.orderId || params.id || '';
+    token = params.token || '';
   } else if (event.httpMethod === 'POST') {
     try {
       const body = JSON.parse(event.body || '{}');
       email = body.email || '';
       orderId = body.orderId || body.id || '';
+      token = body.token || '';
     } catch (e) {}
   } else {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  if (!email || !email.trim()) {
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Customer Email is required to track order status.' })
-    };
+  // 1. Direct lookup by Unguessable Tracking Token
+  if (token && token.trim()) {
+    const cleanToken = token.trim();
+    let order = getOrderByTokenFromStore(cleanToken);
+
+    if (!order && isSupabaseAdminConfigured() && supabaseAdmin) {
+      try {
+        const { data } = await supabaseAdmin.from('orders').select('*').eq('tracking_token', cleanToken).maybeSingle();
+        if (data) order = data;
+      } catch (e) {}
+    }
+
+    if (order) {
+      const server = order.panel_server_id ? getServerByIdFromStore(order.panel_server_id) : null;
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          orders: [formatOrderForTracking(order, server)]
+        })
+      };
+    }
   }
 
-  const cleanEmail = email.trim().toLowerCase();
+  // 2. Lookup by Order ID + Email or Email alone
+  const cleanEmail = (email || '').trim().toLowerCase();
   const cleanOrderId = (orderId || '').trim().toLowerCase();
+
+  if (!cleanEmail && !cleanOrderId) {
+    return {
+      statusCode: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: 'Please enter your Order Reference or Email address.' })
+    };
+  }
 
   try {
     const matchedOrders = [];
@@ -37,27 +82,42 @@ export async function handler(event, context) {
 
     const storeOrders = getAllOrdersFromStore();
     storeOrders.forEach(o => {
-      const emailMatch = (o.user_email?.toLowerCase() === cleanEmail) ||
-                         (o.contact_email?.toLowerCase() === cleanEmail) ||
-                         (o.owner_email?.toLowerCase() === cleanEmail);
-      if (emailMatch) {
-        if (!cleanOrderId || o.id?.toLowerCase() === cleanOrderId) {
-          if (!seenIds.has(o.id)) {
-            seenIds.add(o.id);
-            matchedOrders.push(o);
-          }
+      const emailMatches = cleanEmail ? (
+        (o.user_email?.toLowerCase() === cleanEmail) ||
+        (o.contact_email?.toLowerCase() === cleanEmail) ||
+        (o.owner_uid?.toLowerCase() === cleanEmail)
+      ) : true;
+
+      const orderMatches = cleanOrderId ? (
+        o.id?.toLowerCase() === cleanOrderId ||
+        o.razorpay_order_id?.toLowerCase() === cleanOrderId
+      ) : true;
+
+      if (cleanEmail && cleanOrderId) {
+        if (emailMatches && orderMatches && !seenIds.has(o.id)) {
+          seenIds.add(o.id);
+          matchedOrders.push(o);
+        }
+      } else if (cleanOrderId) {
+        if (orderMatches && !seenIds.has(o.id)) {
+          seenIds.add(o.id);
+          matchedOrders.push(o);
+        }
+      } else if (cleanEmail) {
+        if (emailMatches && !seenIds.has(o.id)) {
+          seenIds.add(o.id);
+          matchedOrders.push(o);
         }
       }
     });
 
     if (isSupabaseAdminConfigured() && supabaseAdmin) {
       try {
-        let query = supabaseAdmin.from('orders').select('*').or(`user_email.ilike.${cleanEmail},contact_email.ilike.${cleanEmail}`);
-        if (cleanOrderId) {
-          query = query.eq('id', orderId.trim());
-        }
-        const { data, error } = await query;
-        if (!error && data) {
+        let query = supabaseAdmin.from('orders').select('*');
+        if (cleanOrderId) query = query.eq('id', orderId.trim());
+        if (cleanEmail) query = query.or(`user_email.ilike.${cleanEmail},contact_email.ilike.${cleanEmail}`);
+        const { data } = await query;
+        if (data) {
           data.forEach(o => {
             if (!seenIds.has(o.id)) {
               seenIds.add(o.id);
@@ -66,58 +126,79 @@ export async function handler(event, context) {
           });
         }
       } catch (dbErr) {
-        console.warn('Track order DB fetch warning:', dbErr.message);
+        console.warn('[Track Order DB Warning]:', dbErr.message);
       }
     }
 
     if (matchedOrders.length === 0) {
       return {
         statusCode: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
         body: JSON.stringify({
           error: cleanOrderId
-            ? `No order found for Email '${cleanEmail}' with Order ID '${orderId}'.`
-            : `No orders found for Email '${cleanEmail}'. Please check your email address.`
+            ? `No order found with Reference '${orderId}'. Please verify your order number.`
+            : `No orders found for '${email}'. Please verify your email.`
         })
       };
     }
 
-    const formattedOrders = matchedOrders.map(o => ({
-      id: o.id,
-      userName: o.user_name || o.userName,
-      userEmail: o.user_email || o.contact_email,
-      contactEmail: o.contact_email || o.user_email,
-      mobile: o.mobile,
-      planId: o.plan_id,
-      planName: o.plan_name || o.planName,
-      amount: o.amount,
-      duration: o.duration || '1 Month',
-      durationDays: o.duration_days || 30,
-      paymentStatus: o.payment_status || 'PENDING',
-      provisioningStatus: o.provisioning_status || 'waiting_approval',
-      rejectionReason: o.rejection_reason || null,
-      panelServerId: o.panel_server_id || null,
-      paymentProof: o.payment_proof || null,
-      createdAt: o.created_at,
-      activatedAt: o.activated_at || null,
-      expiresAt: o.expires_at || null
-    })).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const formattedOrders = matchedOrders.map(o => {
+      const server = o.panel_server_id ? getServerByIdFromStore(o.panel_server_id) : null;
+      return formatOrderForTracking(o, server);
+    });
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: true,
-        order: formattedOrders[0],
-        orders: formattedOrders
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ orders: formattedOrders })
     };
   } catch (err) {
-    console.error('Track order error:', err);
+    console.error('[Track Order Error]:', err);
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: err.message || 'Internal server error while tracking order.' })
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: 'Failed to search order records.' })
     };
   }
+}
+
+function formatOrderForTracking(order, server) {
+  return {
+    id: order.id,
+    trackingToken: order.tracking_token,
+    userName: order.user_name || 'Customer',
+    userEmail: order.user_email || order.contact_email,
+    mobile: order.mobile ? `${order.mobile.slice(0, 3)}****${order.mobile.slice(-3)}` : '',
+    planId: order.plan_id,
+    planName: order.plan_name,
+    amount: order.amount,
+    currency: order.currency || 'INR',
+    paymentStatus: order.payment_status || 'PENDING',
+    provisioningStatus: order.provisioning_status || 'waiting_payment',
+    serverName: order.server_name || order.plan_name,
+    serverRegion: order.server_region || 'Mumbai, India',
+    panelServerId: order.panel_server_id || null,
+    deploymentError: order.deployment_error || null,
+    createdAt: order.created_at,
+    paidAt: order.paid_at || null,
+    provisionedAt: order.provisioned_at || null,
+    serverDetails: (order.provisioning_status === 'active' || server) ? {
+      ip: server?.ip || order.server_details?.ip || '103.195.100.42',
+      port: server?.port || order.server_details?.port || 25565,
+      nodeId: server?.node_id || 1,
+      status: server?.status || 'active',
+      memoryMb: server?.memory_mb || 2048,
+      panelUrl: process.env.PTERODACTYL_PANEL_URL || 'https://panel.novexhost.com'
+    } : null,
+    supportInstructions: 'If you have questions about your server, connect with our 24/7 technical team on Discord or email support@novexhost.com with your Order Reference.'
+  };
 }

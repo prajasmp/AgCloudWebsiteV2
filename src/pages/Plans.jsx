@@ -147,7 +147,7 @@ export default function Plans() {
           {isDomain ? (
             <a
               className={`craft-action-btn ${isPopular ? 'popular-cta-btn' : 'standard-cta-btn'}`}
-              href="https://dsc.gg/agcloud"
+              href="https://discord.gg/novexhost"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -171,9 +171,9 @@ export default function Plans() {
       <div className="container">
 
         <div className="section-heading text-center craft-heading">
-          <span className="badge-subtitle">Pro Access</span>
-          <h1 className="craft-main-title">Get all AG Cloud power for your project</h1>
-          <p className="craft-main-desc">High-performance game servers, VPS, and bot hosting with low Asia latency</p>
+          <span className="badge-subtitle">Enterprise Hardware</span>
+          <h1 className="craft-main-title">High-Performance Infrastructure by NOVEXHOST</h1>
+          <p className="craft-main-desc">Enterprise Gen4 NVMe game servers, Cloud VPS, bot hosting, and domains with instant automated deployment</p>
 
           <div className="billing-pill-container plan-section-tabs" aria-label="Plan categories">
             {CATEGORY_GROUPS.map(group => (

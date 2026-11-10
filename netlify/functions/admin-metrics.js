@@ -3,6 +3,18 @@ import { supabaseAdmin, isSupabaseAdminConfigured } from './lib/supabaseAdmin.js
 import { getAllOrdersFromStore, getAllServersFromStore } from './lib/devStore.js';
 
 export async function handler(event, context) {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
@@ -11,7 +23,11 @@ export async function handler(event, context) {
     const authUser = await verifyFirebaseToken(event.headers);
 
     if (!isAuthorizedAdmin(authUser.email)) {
-      return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Admin access required' }) };
+      return {
+        statusCode: 403,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden: Admin access required' })
+      };
     }
 
     let orders = getAllOrdersFromStore();
@@ -44,25 +60,56 @@ export async function handler(event, context) {
           userCount = Math.max(userCount, usersRes.count);
         }
       } catch (err) {
-        console.warn('DB fetch metrics warning:', err.message);
+        console.warn('[Admin Metrics DB Warning]:', err.message);
       }
     }
 
+    const paidOrders = orders.filter(o => 
+      String(o.payment_status).toUpperCase() === 'PAID' || 
+      String(o.payment_status).toUpperCase() === 'APPROVED'
+    );
+    const pendingOrders = orders.filter(o => 
+      String(o.payment_status).toUpperCase() === 'PENDING'
+    );
+    const failedOrders = orders.filter(o => 
+      String(o.payment_status).toUpperCase() === 'FAILED' || 
+      String(o.payment_status).toUpperCase() === 'REJECTED'
+    );
+    const failedDeployments = orders.filter(o => 
+      String(o.provisioning_status).toLowerCase() === 'failed'
+    );
+
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+
     const metrics = {
-      totalUsers: Math.max(userCount, new Set(servers.map(s => s.owner_uid || s.owner_email)).size),
-      totalServers: servers.length,
-      onlineServers: servers.filter(s => s.status === 'online' || s.status === 'active' || s.status === 'running').length,
-      offlineServers: servers.filter(s => s.status === 'offline' || s.status === 'stopped').length,
-      suspendedServers: servers.filter(s => s.status === 'suspended').length,
+      totalRevenue,
       totalOrders: orders.length,
-      paidPayments: orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'admin_bypass').length,
-      pendingPayments: orders.filter(o => o.payment_status === 'pending' || o.payment_status === 'processing').length,
-      failedPayments: orders.filter(o => o.payment_status === 'failed' || o.payment_status === 'rejected' || o.payment_status === 'expired').length
+      successfulPayments: paidOrders.length,
+      pendingPayments: pendingOrders.length,
+      failedPayments: failedOrders.length,
+      activeServers: servers.filter(s => s.status === 'online' || s.status === 'active' || s.status === 'running').length,
+      totalServers: servers.length,
+      failedDeployments: failedDeployments.length,
+      totalUsers: Math.max(userCount, new Set(servers.map(s => s.customer_email || s.owner_uid)).size),
+      recentTransactions: orders.slice(0, 10).map(o => ({
+        id: o.id,
+        userName: o.user_name,
+        userEmail: o.user_email,
+        planName: o.plan_name,
+        amount: o.amount,
+        paymentStatus: o.payment_status,
+        provisioningStatus: o.provisioning_status,
+        razorpayPaymentId: o.razorpay_payment_id || null,
+        createdAt: o.created_at
+      }))
     };
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify({ metrics })
     };
   } catch (err) {

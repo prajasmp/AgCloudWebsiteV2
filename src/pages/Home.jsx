@@ -31,7 +31,7 @@ export default function Home() {
       dx: (Math.random() - 0.5) * 0.4,
       dy: -Math.random() * 0.5 - 0.2,
       alpha: Math.random() * 0.7 + 0.2,
-      color: Math.random() > 0.3 ? '#A855F7' : '#D946EF'
+      color: Math.random() > 0.3 ? '#00f2fe' : '#06b6d4'
     }));
 
     const render = () => {
@@ -128,20 +128,20 @@ export default function Home() {
         <div className="ag-hero-art-layer">
           <img
             src="/assets/agcloud_hero_cinematic.png"
-            alt="AG Cloud Cinematic Floating World"
+            alt="NOVEXHOST Futuristic Cloud Infrastructure"
             className="ag-cinematic-bg-img"
           />
           <div className="ag-art-gradient-overlay" />
 
           <div className="ag-artwork-text-left">
             <span className="ag-art-line">BUILD</span>
-            <span className="ag-art-line">PLAY</span>
-            <span className="ag-art-line">CREATE</span>
-            <span className="ag-art-line cyan-highlight">TOGETHER</span>
+            <span className="ag-art-line">DEPLOY</span>
+            <span className="ag-art-line">SCALE</span>
+            <span className="ag-art-line cyan-highlight">UNLIMITED</span>
           </div>
 
           <div className="ag-artwork-text-right">
-            <span>MORE THAN JUST HOSTING</span>
+            <span>PREMIUM CLOUD &amp; VPS HOSTING</span>
           </div>
 
           <div className="ag-pathway-texts">
@@ -157,7 +157,7 @@ export default function Home() {
             <ScrollReveal animation="fade-up" delay={100}>
               <div className="ag-glass-badge">
                 <Sparkles size={14} className="badge-sparkle" />
-                <span>#1 Game Hosting Platform</span>
+                <span>Next-Gen Cloud Platform</span>
               </div>
             </ScrollReveal>
 
@@ -165,13 +165,13 @@ export default function Home() {
               <h1 className="ag-hero-title">
                 POWER YOUR<br />
                 WORLD WITH<br />
-                <span className="cyan-electric-text">AG CLOUD</span>
+                <span className="cyan-electric-text">NOVEXHOST</span>
               </h1>
             </ScrollReveal>
 
             <ScrollReveal animation="fade-up" delay={300}>
               <p className="ag-hero-desc">
-                High-performance game servers, VPS, bot hosting and domains with ultra-low latency and 24/7 support.
+                High-performance game servers, Gen4 NVMe Cloud VPS, Discord bot hosting, and domains with automated instant deployment and 24/7 technical support.
               </p>
             </ScrollReveal>
 
@@ -219,7 +219,7 @@ export default function Home() {
                 </Link>
 
                 <a
-                  href="https://dsc.gg/agcloud"
+                  href="https://discord.gg/novexhost"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ag-discord-cta"
@@ -249,12 +249,12 @@ export default function Home() {
                   <svg viewBox="0 0 200 40" className="waveform-svg">
                     <path
                       d="M 0 25 Q 25 10, 50 28 T 100 15 T 150 30 T 200 18 L 200 40 L 0 40 Z"
-                      fill="rgba(168, 85, 247, 0.15)"
+                      fill="rgba(6, 182, 212, 0.15)"
                     />
                     <path
                       d="M 0 25 Q 25 10, 50 28 T 100 15 T 150 30 T 200 18"
                       fill="none"
-                      stroke="#A855F7"
+                      stroke="#00f2fe"
                       strokeWidth="2.5"
                     />
                   </svg>
@@ -370,8 +370,8 @@ export default function Home() {
       <section className="ag-section" id="features">
         <div className="container">
           <ScrollReveal animation="fade-up" className="section-heading text-center">
-            <span className="ag-section-badge">WHY AG CLOUD</span>
-            <h2 className="ag-section-title">Built for Performance & Maximum Reliability</h2>
+            <span className="ag-section-badge">WHY NOVEXHOST</span>
+            <h2 className="ag-section-title">Built for Performance &amp; Maximum Reliability</h2>
           </ScrollReveal>
 
           <div className="ag-features-grid">

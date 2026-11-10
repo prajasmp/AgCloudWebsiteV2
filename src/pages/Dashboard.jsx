@@ -150,7 +150,7 @@ export default function Dashboard() {
 
                 <div style={{ marginTop: '0.5rem' }}>
                   <a
-                    href={server.identifier || server.panel_uuid || server.panel_server_id ? `https://panel.agcloud.fun/server/${server.identifier || server.panel_uuid || server.panel_server_id}` : 'https://panel.agcloud.fun'}
+                    href={server.identifier || server.panel_uuid || server.panel_server_id ? `https://panel.novexhost.com/server/${server.identifier || server.panel_uuid || server.panel_server_id}` : 'https://panel.novexhost.com'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="primary-btn small glow-btn"

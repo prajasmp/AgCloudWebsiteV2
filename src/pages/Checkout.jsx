@@ -1,516 +1,568 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { getPlanById, CATEGORIES } from '../data/plans';
-import { useAuth } from '../context/AuthContext';
+import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
+import { getPlanById, SERVER_LOCATIONS, formatINR } from '../data/plans';
 import { useCurrency } from '../context/CurrencyContext';
-import { createPaymentOrder } from '../services/api';
+import { createPaymentOrder, verifyPayment } from '../services/api';
+import NovexLogo from '../components/NovexLogo';
 import {
-  ShieldCheck, Lock, AlertTriangle, Zap, User, Mail, Smartphone,
-  Check, ArrowRight, ArrowLeft, Upload, FileCheck, Image as ImageIcon,
-  QrCode, Copy, CheckCircle2, Server
+  ShieldCheck, Lock, Zap, User, Mail, Smartphone,
+  Check, ArrowRight, ArrowLeft, QrCode, CheckCircle2,
+  Server, Globe, Cpu, HardDrive, RefreshCw, AlertCircle, Loader2
 } from 'lucide-react';
 
 export default function Checkout() {
   const { planId } = useParams();
   const navigate = useNavigate();
   const plan = getPlanById(planId || '');
-  const { user, loginWithGoogle } = useAuth();
   const { formatPrice } = useCurrency();
 
-  const [currentStep, setCurrentStep] = useState(1);
-
-  const [fullName, setFullName] = useState(user?.displayName || '');
-  const [deliveryEmail, setDeliveryEmail] = useState(user?.email || '');
+  // Customer details (No login required)
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
+
+  // Server configuration
   const [serverName, setServerName] = useState('');
+  const [serverRegion, setServerRegion] = useState('Mumbai, India');
 
-  const [proofImage, setProofImage] = useState(null);
-  const [proofPreview, setProofPreview] = useState('');
-
+  // Checkout states
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [copiedUpi, setCopiedUpi] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const [submittedOrderId, setSubmittedOrderId] = useState('');
+  const [activeStep, setActiveStep] = useState(1); // 1: Configure & Details, 2: Payment Review & Razorpay
+  const [createdOrderData, setCreatedOrderData] = useState(null);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      if (!fullName) setFullName(user.displayName || '');
-      if (!deliveryEmail) setDeliveryEmail(user.email || '');
+    // If an existing guest user stored details in localStorage, autofill for convenience
+    try {
+      const saved = localStorage.getItem('novexhost_guest_info');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.name) setFullName(parsed.name);
+        if (parsed.email) setEmail(parsed.email);
+        if (parsed.mobile) setMobileNumber(parsed.mobile);
+      }
+    } catch (e) {}
+
+    if (plan && !serverName) {
+      setServerName(`${plan.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}-${Math.floor(100 + Math.random() * 900)}`);
     }
-  }, [user]);
+  }, [plan]);
 
   if (!plan) {
     return <Navigate to="/plans" replace />;
   }
 
-  const trustedPrice = plan.price || 0;
-  const trustedDuration = plan.period === 'year' ? '1 Year' : '1 Month';
-  const upiReceiverId = 'anandagcloud@fam';
+  // Helper to load Razorpay script dynamically
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        return resolve(true);
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
-  const handleStep1Next = (e) => {
+  const handleProceedToReview = (e) => {
     e.preventDefault();
-    if (!user) {
-      loginWithGoogle();
-      return;
-    }
+    setErrorMessage('');
+
     if (!fullName || !fullName.trim()) {
-      setErrorMessage('Please enter your full name.');
+      setErrorMessage('Please enter your full name for server registration.');
       return;
     }
-    if (!deliveryEmail || !deliveryEmail.includes('@')) {
-      setErrorMessage('Please enter a valid email address.');
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setErrorMessage('Please enter a valid email address to receive server credentials.');
       return;
     }
-    if (!mobileNumber || mobileNumber.length < 10) {
+    const cleanMobile = mobileNumber.replace(/\D/g, '');
+    if (!cleanMobile || cleanMobile.length < 10) {
       setErrorMessage('Please enter a valid 10-digit mobile number.');
       return;
     }
-    setErrorMessage('');
-    setCurrentStep(2);
+
+    try {
+      localStorage.setItem('novexhost_guest_info', JSON.stringify({
+        name: fullName.trim(),
+        email: email.trim(),
+        mobile: cleanMobile
+      }));
+    } catch (e) {}
+
+    setActiveStep(2);
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('Please select a valid image file (PNG, JPG, WEBP).');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('File size exceeds 5MB limit. Please upload a smaller image.');
-      return;
-    }
-
-    setErrorMessage('');
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setProofPreview(event.target.result);
-      setProofImage(event.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleConfirmOrder = async (e) => {
-    e.preventDefault();
-    if (!user) {
-      loginWithGoogle();
-      return;
-    }
-
-    if (!proofImage) {
-      setErrorMessage('Payment screenshot/proof is required before confirming your order.');
-      return;
-    }
-
+  const handleInitiateRazorpay = async () => {
     setSubmitting(true);
     setErrorMessage('');
 
     try {
-      const res = await createPaymentOrder({
+      // 1. Create backend order & Razorpay order
+      const orderRes = await createPaymentOrder({
         planId: plan.id,
         fullName: fullName.trim(),
-        deliveryEmail: deliveryEmail.trim(),
+        email: email.trim().toLowerCase(),
         mobileNumber: mobileNumber.trim(),
-        paymentProof: proofImage,
-        serverName: serverName.trim() || `${plan.name} Server`
+        serverName: serverName.trim() || `${plan.name} Node`,
+        serverRegion
       });
 
-      setSubmittedOrderId(res.orderId);
-      setSubmitting(false);
-      setShowSuccessPopup(true);
+      if (!orderRes.success) {
+        throw new Error(orderRes.error || 'Failed to create order on backend.');
+      }
+
+      setCreatedOrderData(orderRes);
+
+      // 2. Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Razorpay payment gateway failed to load. Please check your network connection.');
+      }
+
+      // 3. Configure Razorpay modal options
+      const options = {
+        key: orderRes.razorpayKeyId,
+        amount: orderRes.amountInPaise,
+        currency: 'INR',
+        name: 'NOVEXHOST',
+        description: `${plan.name} - Instant Deployment`,
+        image: '/favicon.svg',
+        order_id: orderRes.razorpayOrderId,
+        handler: async function (response) {
+          // Razorpay payment success handler
+          await handlePaymentSuccess(response, orderRes);
+        },
+        prefill: {
+          name: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          contact: mobileNumber.trim()
+        },
+        notes: {
+          orderId: orderRes.orderId,
+          planId: plan.id,
+          serverName: serverName.trim()
+        },
+        theme: {
+          color: '#00f2fe'
+        },
+        modal: {
+          ondismiss: function () {
+            setSubmitting(false);
+          }
+        }
+      };
+
+      // If in sandbox mode without active keys or if user triggers test simulation
+      if (!window.Razorpay || orderRes.razorpayKeyId === 'rzp_test_placeholder' || orderRes.razorpayOrderId.startsWith('order_')) {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (failRes) {
+          console.error('[Razorpay Failed]:', failRes.error);
+          setErrorMessage(`Payment failed: ${failRes.error.description || 'Transaction declined'}`);
+          setSubmitting(false);
+        });
+        rzp.open();
+      } else {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      }
     } catch (err) {
+      console.error('[Checkout Error]:', err);
+      setErrorMessage(err.message || 'Payment initiation failed. Please try again.');
       setSubmitting(false);
-      setErrorMessage(err.message || 'Failed to submit order. Please try again.');
     }
   };
 
-  const qrUri = `upi://pay?pa=${upiReceiverId}&pn=AG%20Cloud%20Hosting&am=${trustedPrice}&cu=INR`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrUri)}`;
+  const handlePaymentSuccess = async (rzpResponse, orderMeta) => {
+    setIsDeploying(true);
+    setSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      console.log('[Razorpay Success Received]:', rzpResponse);
+      const verifyRes = await verifyPayment({
+        orderId: orderMeta.orderId,
+        razorpayOrderId: rzpResponse.razorpay_order_id || orderMeta.razorpayOrderId,
+        razorpayPaymentId: rzpResponse.razorpay_payment_id || `pay_${Date.now()}`,
+        razorpaySignature: rzpResponse.razorpay_signature || `sig_${Date.now()}`
+      });
+
+      if (!verifyRes.success) {
+        throw new Error(verifyRes.error || 'Payment signature verification failed.');
+      }
+
+      // Navigate to order tracking page with token
+      navigate(`/order-success/${orderMeta.orderId}?token=${orderMeta.trackingToken}`);
+    } catch (err) {
+      console.error('[Verification Error]:', err);
+      setErrorMessage(`Payment verification notice: ${err.message}. Your payment was received; please track via order reference.`);
+      setIsDeploying(false);
+      setSubmitting(false);
+    }
+  };
+
+  // Development sandbox payment simulation helper
+  const handleTestSimulatePayment = async () => {
+    setSubmitting(true);
+    try {
+      let orderRes = createdOrderData;
+      if (!orderRes) {
+        orderRes = await createPaymentOrder({
+          planId: plan.id,
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          mobileNumber: mobileNumber.trim(),
+          serverName: serverName.trim() || `${plan.name} Node`,
+          serverRegion
+        });
+        setCreatedOrderData(orderRes);
+      }
+
+      await handlePaymentSuccess({
+        razorpay_order_id: orderRes.razorpayOrderId,
+        razorpay_payment_id: `pay_test_${Date.now()}`,
+        razorpay_signature: `test_sig_${Date.now()}`
+      }, orderRes);
+    } catch (err) {
+      setErrorMessage(err.message || 'Test simulation error');
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <section className="section top-space">
-      <div className="container checkout-container">
+    <div className="checkout-page-wrapper" style={{ minHeight: '85vh', padding: '3rem 1rem' }}>
+      <div className="container" style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
-        <div className="checkout-header text-center">
-          <span className="famgateway-badge">
-            <ShieldCheck size={16} className="text-cyan" /> 3-Step Secure Order System
-          </span>
-          <h1 className="checkout-title">Subscribe to {plan.name}</h1>
-          <p className="checkout-subtitle">
-            {CATEGORIES[plan.category] || 'Minecraft Hosting'} · <strong className="text-cyan">{formatPrice(trustedPrice, plan.period)}</strong>
-          </p>
+        {/* Header Breadcrumb */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <Link to="/plans" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#00f2fe', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+              <ArrowLeft size={16} /> Back to Hosting Plans
+            </Link>
+            <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', fontFamily: 'Outfit, sans-serif' }}>
+              Checkout &bull; <span style={{ color: '#00f2fe' }}>No Registration Required</span>
+            </h1>
+            <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>
+              Instant automated deployment right after Razorpay payment verification.
+            </p>
+          </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
-            <div className={`step-pill ${currentStep === 1 ? 'active' : currentStep > 1 ? 'completed' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.9rem', borderRadius: '20px', background: currentStep === 1 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)', border: currentStep === 1 ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)', color: currentStep === 1 ? '#38bdf8' : '#94a3b8', fontSize: '0.85rem', fontWeight: 700 }}>
-              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: currentStep >= 1 ? '#0284c7' : '#334155', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>1</span>
-              <span>1. Customer Details</span>
+          {/* Stepper indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: activeStep === 1 ? '#00f2fe' : '#34d399', fontWeight: 700, fontSize: '0.9rem' }}>
+              <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: activeStep === 1 ? 'rgba(0, 242, 254, 0.2)' : '#10b981', border: `1px solid ${activeStep === 1 ? '#00f2fe' : '#10b981'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                {activeStep > 1 ? <Check size={14} /> : '1'}
+              </span>
+              <span>Details</span>
             </div>
-            <span style={{ color: '#475569' }}>→</span>
-            <div className={`step-pill ${currentStep === 2 ? 'active' : currentStep > 2 ? 'completed' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.9rem', borderRadius: '20px', background: currentStep === 2 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)', border: currentStep === 2 ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)', color: currentStep === 2 ? '#38bdf8' : '#94a3b8', fontSize: '0.85rem', fontWeight: 700 }}>
-              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: currentStep >= 2 ? '#0284c7' : '#334155', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>2</span>
-              <span>2. QR Payment</span>
-            </div>
-            <span style={{ color: '#475569' }}>→</span>
-            <div className={`step-pill ${currentStep === 3 ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.9rem', borderRadius: '20px', background: currentStep === 3 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)', border: currentStep === 3 ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)', color: currentStep === 3 ? '#38bdf8' : '#94a3b8', fontSize: '0.85rem', fontWeight: 700 }}>
-              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: currentStep === 3 ? '#0284c7' : '#334155', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>3</span>
-              <span>3. Payment Proof</span>
+            <span style={{ width: '24px', height: '2px', background: 'rgba(255, 255, 255, 0.15)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: activeStep === 2 ? '#00f2fe' : '#64748b', fontWeight: 700, fontSize: '0.9rem' }}>
+              <span style={{ width: '28px', height: '28px', borderRadius: '50%', background: activeStep === 2 ? 'rgba(0, 242, 254, 0.2)' : 'rgba(255, 255, 255, 0.05)', border: `1px solid ${activeStep === 2 ? '#00f2fe' : 'rgba(255, 255, 255, 0.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: activeStep === 2 ? '#00f2fe' : '#64748b' }}>
+                2
+              </span>
+              <span>Payment &amp; Deploy</span>
             </div>
           </div>
         </div>
 
-        <div className="checkout-grid" style={{ maxWidth: '980px', margin: '0 auto' }}>
+        {errorMessage && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', color: '#fca5a5' }}>
+            <AlertCircle size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
-          <aside className="famgateway-qr-card glass-card glow-border" style={{ alignSelf: 'flex-start' }}>
-            <div className="card-top-header">
-              <span className="gateway-label">Trusted Plan Data</span>
-              <span className="live-timer-pill" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-                <ShieldCheck size={14} /> Verified Backend Price
-              </span>
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
 
-            <div className="plan-summary-box" style={{ padding: '1.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.4rem' }}>{plan.name}</h2>
-              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#38bdf8', marginBottom: '1.25rem' }}>
-                {formatPrice(trustedPrice, plan.period)}
-              </div>
+          {/* LEFT COLUMN: Customer Form or Payment Action */}
+          <div>
+            {activeStep === 1 && (
+              <form onSubmit={handleProceedToReview} style={{ background: '#081426', border: '1px solid rgba(6, 182, 212, 0.25)', borderRadius: '16px', padding: '2rem', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <User size={18} style={{ color: '#00f2fe' }} /> Customer Information
+                </h2>
 
-              <div className="plan-resource-grid" style={{ display: 'grid', gap: '0.75rem', background: 'rgba(0,0,0,0.25)', padding: '0.85rem', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '0.9rem' }}>
-                  <span>Selected Plan:</span>
-                  <strong style={{ color: '#f8fafc' }}>{plan.name}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '0.9rem' }}>
-                  <span>Plan Price:</span>
-                  <strong style={{ color: '#10b981' }}>₹{trustedPrice}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '0.9rem' }}>
-                  <span>Plan Duration:</span>
-                  <strong style={{ color: '#38bdf8' }}>{trustedDuration}</strong>
-                </div>
-                {plan.ram && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '0.9rem' }}>
-                    <span>Allocated RAM:</span>
-                    <strong style={{ color: '#f8fafc' }}>{plan.ram}</strong>
-                  </div>
-                )}
-                {plan.storage && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1', fontSize: '0.9rem' }}>
-                    <span>Disk Storage:</span>
-                    <strong style={{ color: '#f8fafc' }}>{plan.storage}</strong>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="famgateway-steps" style={{ marginTop: '1.25rem' }}>
-              <p><Check size={14} className="step-check" /> 1. Selected plan: <strong>{plan.name}</strong></p>
-              <p><Check size={14} className="step-check" /> 2. Exact amount: <strong>₹{trustedPrice}</strong></p>
-              <p><Check size={14} className="step-check" /> 3. Pterodactyl server provisioned on admin approval</p>
-            </div>
-          </aside>
-
-          <div className="payment-methods-card glass-card glow-border">
-
-            {!user && (
-              <div className="login-gate-banner" style={{ marginBottom: '1.5rem' }}>
-                <Lock size={18} className="text-orange" />
-                <div>
-                  <strong>Google Sign In Required</strong>
-                  <p>Authenticates server ownership to your verified Firebase Google account.</p>
-                </div>
-                <button type="button" className="primary-btn small glow-btn" onClick={loginWithGoogle}>
-                  Sign in
-                </button>
-              </div>
-            )}
-
-            {errorMessage && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#f87171', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
-                <AlertTriangle size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-                {errorMessage}
-              </div>
-            )}
-
-            {currentStep === 1 && (
-              <div>
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.85rem', marginBottom: '1.25rem' }}>
-                  <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f8fafc' }}>Step 1: Customer Details</h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Enter your contact information for order registration and server delivery.</p>
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                    Full Name <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Alex Johnson"
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
+                  />
                 </div>
 
-                <form onSubmit={handleStep1Next} className="payment-form">
-                  <div className="form-grid">
-
-                    <label>
-                      Full Name *
-                      <div className="input-with-icon">
-                        <User size={16} className="input-icon" />
-                        <input
-                          type="text"
-                          required
-                          value={fullName}
-                          onChange={e => setFullName(e.target.value)}
-                          placeholder="e.g. Rahul Sharma"
-                        />
-                      </div>
-                    </label>
-
-                    <label>
-                      Email Address *
-                      <div className="input-with-icon">
-                        <Mail size={16} className="input-icon" />
-                        <input
-                          type="email"
-                          required
-                          value={deliveryEmail}
-                          onChange={e => setDeliveryEmail(e.target.value)}
-                          placeholder="Email for server credentials"
-                        />
-                      </div>
-                    </label>
-
-                    <label className="full-width">
-                      Mobile Number *
-                      <div className="input-with-icon">
-                        <Smartphone size={16} className="input-icon" />
-                        <input
-                          type="tel"
-                          required
-                          maxLength={10}
-                          value={mobileNumber}
-                          onChange={e => setMobileNumber(e.target.value)}
-                          placeholder="e.g. 9876543210"
-                        />
-                      </div>
-                    </label>
-
-                    <label className="full-width">
-                      Minecraft Server Name (Optional)
-                      <div className="input-with-icon">
-                        <Server size={16} className="input-icon" />
-                        <input
-                          type="text"
-                          value={serverName}
-                          onChange={e => setServerName(e.target.value)}
-                          placeholder={`e.g. ${plan.name} Server`}
-                        />
-                      </div>
-                    </label>
-
-                    <div className="full-width" style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
-                      <div>
-                        <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Selected Plan</span>
-                        <strong style={{ color: '#38bdf8', fontSize: '0.95rem' }}>{plan.name}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Plan Price</span>
-                        <strong style={{ color: '#10b981', fontSize: '0.95rem' }}>₹{trustedPrice}</strong>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748b', fontSize: '0.75rem', display: 'block' }}>Plan Duration</span>
-                        <strong style={{ color: '#f8fafc', fontSize: '0.95rem' }}>{trustedDuration}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="primary-btn full glow-btn pay-submit-btn"
-                    style={{ marginTop: '1.25rem', padding: '0.9rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                  >
-                    Next: Step 2 — QR Payment <ArrowRight size={18} />
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {currentStep === 2 && (
-              <div>
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.85rem', marginBottom: '1.25rem' }}>
-                  <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f8fafc' }}>Step 2: QR Payment</h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Scan the QR code using any UPI App (FamPay, PhonePe, GPay, Paytm) and pay the exact amount.</p>
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                    Delivery Email Address <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="alex@gmail.com"
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
+                  />
+                  <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    Your server credentials, panel link, and Razorpay receipt will be delivered here.
+                  </span>
                 </div>
 
-                <div className="text-center" style={{ margin: '1rem 0' }}>
-
-                  <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '16px', display: 'inline-block', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', marginBottom: '1rem' }}>
-                    <img
-                      src={qrImageUrl}
-                      alt="UPI Payment QR Code"
-                      style={{ width: '210px', height: '210px', display: 'block', borderRadius: '8px', objectFit: 'contain' }}
+                <div style={{ marginBottom: '1.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                    Mobile Number (10 Digits) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <span style={{ background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', padding: '0.8rem 0.9rem', color: '#94a3b8', fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      required
+                      maxLength={10}
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value)}
+                      placeholder="9876543210"
+                      style={{ flex: 1, padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
                     />
                   </div>
-
-                  <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '0.85rem 1.15rem', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                    <span style={{ color: '#cbd5e1', fontSize: '0.92rem' }}>UPI ID: <strong className="text-cyan">{upiReceiverId}</strong></span>
-                    <button
-                      type="button"
-                      className="secondary-btn small"
-                      style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem' }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(upiReceiverId);
-                        setCopiedUpi(true);
-                        setTimeout(() => setCopiedUpi(false), 2000);
-                      }}
-                    >
-                      <Copy size={13} /> {copiedUpi ? 'Copied! ✓' : 'Copy'}
-                    </button>
-                  </div>
-
-                  <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.25rem' }}>
-                    <span style={{ color: '#cbd5e1', fontSize: '0.88rem' }}>Exact Amount to Pay: </span>
-                    <strong style={{ color: '#34d399', fontSize: '1.2rem', marginLeft: '0.4rem' }}>₹{trustedPrice}</strong>
-                  </div>
-
-                  <div style={{ background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.4)', color: '#fef08a', padding: '0.85rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
-                    <AlertTriangle size={18} style={{ minWidth: '18px', marginTop: '2px', color: '#facc15' }} />
-                    <span><strong>Note:</strong> Take a screenshot after completing the payment. You will need to upload it as payment proof.</span>
-                  </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={() => setCurrentStep(1)}
-                    style={{ padding: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                  >
-                    <ArrowLeft size={16} /> Back
-                  </button>
-                  <button
-                    type="button"
-                    className="primary-btn glow-btn pay-submit-btn"
-                    onClick={() => setCurrentStep(3)}
-                    style={{ padding: '0.85rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                  >
-                    Next: Step 3 — Upload Proof <ArrowRight size={18} />
-                  </button>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', marginBottom: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Server size={18} style={{ color: '#00f2fe' }} /> Server Configuration
+                </h2>
+
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                    Server Hostname / Label
+                  </label>
+                  <input
+                    type="text"
+                    value={serverName}
+                    onChange={(e) => setServerName(e.target.value)}
+                    placeholder="my-cool-server"
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
+                  />
                 </div>
-              </div>
+
+                <div style={{ marginBottom: '1.75rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                    Server Cluster Location
+                  </label>
+                  <select
+                    value={serverRegion}
+                    onChange={(e) => setServerRegion(e.target.value)}
+                    style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
+                  >
+                    {SERVER_LOCATIONS.map(loc => (
+                      <option key={loc.id} value={loc.name}>
+                        {loc.flag} {loc.name} (Ping: {loc.ping})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{ width: '100%', padding: '1rem', background: 'linear-gradient(135deg, #00f2fe 0%, #06b6d4 100%)', color: '#030712', fontWeight: 800, fontSize: '1rem', border: 'none', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 0 25px rgba(0, 242, 254, 0.4)' }}
+                >
+                  <span>Review &amp; Proceed to Payment</span>
+                  <ArrowRight size={18} />
+                </button>
+              </form>
             )}
 
-            {currentStep === 3 && (
-              <div>
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.85rem', marginBottom: '1.25rem' }}>
-                  <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f8fafc' }}>Step 3: Upload Payment Proof</h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Upload your transaction screenshot so the admin can verify your payment.</p>
+            {activeStep === 2 && (
+              <div style={{ background: '#081426', border: '1px solid rgba(6, 182, 212, 0.25)', borderRadius: '16px', padding: '2rem', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Lock size={18} style={{ color: '#00f2fe' }} /> Secure Razorpay Checkout
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.88rem', marginBottom: '1.5rem' }}>
+                  Pay via UPI (GPay, PhonePe, Paytm), Credit/Debit Card, NetBanking, or Wallets in INR.
+                </p>
+
+                <div style={{ background: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Customer:</span>
+                    <span style={{ color: '#ffffff', fontWeight: 600 }}>{fullName}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Email:</span>
+                    <span style={{ color: '#ffffff', fontWeight: 600 }}>{email}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Contact:</span>
+                    <span style={{ color: '#ffffff', fontWeight: 600 }}>+91 {mobileNumber}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Server Label:</span>
+                    <span style={{ color: '#00f2fe', fontWeight: 600 }}>{serverName}</span>
+                  </div>
                 </div>
 
-                <form onSubmit={handleConfirmOrder} className="payment-form">
-
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                      Upload Payment Screenshot / Proof *
-                    </label>
-                    <div style={{ border: '2px dashed rgba(56, 189, 248, 0.4)', background: 'rgba(15, 23, 42, 0.6)', padding: '1.5rem', borderRadius: '12px', textAlign: 'center', cursor: 'pointer' }}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id="proof-upload-input"
-                        onChange={handleImageUpload}
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor="proof-upload-input" style={{ cursor: 'pointer', display: 'block' }}>
-                        {proofPreview ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-                            <img
-                              src={proofPreview}
-                              alt="Payment Proof Preview"
-                              style={{ maxHeight: '180px', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.5)', objectFit: 'contain' }}
-                            />
-                            <span style={{ color: '#34d399', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <CheckCircle2 size={16} /> Image selected. Click to change screenshot.
-                            </span>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                            <Upload size={36} className="text-cyan" />
-                            <strong style={{ color: '#f8fafc', fontSize: '1rem' }}>Click to browse & upload payment screenshot</strong>
-                            <span style={{ color: '#64748b', fontSize: '0.82rem' }}>Supports PNG, JPG, WEBP (Max 5MB)</span>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', padding: '1.15rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
-                      Order Summary Confirmation
+                {isDeploying ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+                    <Loader2 size={36} className="spin-loader" style={{ color: '#00f2fe', margin: '0 auto 1rem' }} />
+                    <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                      Payment Verified! Provisioning Server...
                     </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.88rem', color: '#cbd5e1' }}>
-                      <div>Selected Plan: <strong style={{ color: '#f8fafc' }}>{plan.name}</strong></div>
-                      <div>Amount Paid: <strong style={{ color: '#10b981' }}>₹{trustedPrice}</strong></div>
-                      <div>Duration: <strong style={{ color: '#38bdf8' }}>{trustedDuration}</strong></div>
-                      <div>Customer Email: <strong style={{ color: '#f8fafc' }}>{deliveryEmail}</strong></div>
-                    </div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                      Contacting Pterodactyl node cluster &amp; allocating RAM limits. Please hold...
+                    </p>
                   </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
+                ) : (
+                  <>
                     <button
                       type="button"
-                      className="secondary-btn"
-                      onClick={() => setCurrentStep(2)}
-                      style={{ padding: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                    >
-                      <ArrowLeft size={16} /> Back
-                    </button>
-                    <button
-                      type="submit"
+                      onClick={handleInitiateRazorpay}
                       disabled={submitting}
-                      className="primary-btn glow-btn pay-submit-btn"
-                      style={{ padding: '0.85rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      style={{ width: '100%', padding: '1.1rem', background: 'linear-gradient(135deg, #00f2fe 0%, #06b6d4 100%)', color: '#030712', fontWeight: 800, fontSize: '1.05rem', border: 'none', borderRadius: '12px', cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 0 25px rgba(0, 242, 254, 0.4)', opacity: submitting ? 0.7 : 1 }}
                     >
                       {submitting ? (
-                        <span>Submitting Order...</span>
+                        <>
+                          <Loader2 size={20} className="spin-loader" />
+                          <span>Connecting to Razorpay...</span>
+                        </>
                       ) : (
                         <>
-                          <Check size={18} /> Confirm Order
+                          <Lock size={18} />
+                          <span>Pay {formatINR(plan.price)} with Razorpay &rarr;</span>
                         </>
                       )}
                     </button>
-                  </div>
-                </form>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveStep(1)}
+                        style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <ArrowLeft size={14} /> Edit Customer Details
+                      </button>
+
+                      {/* Developer Sandbox Quick-Test Trigger */}
+                      <button
+                        type="button"
+                        onClick={handleTestSimulatePayment}
+                        disabled={submitting}
+                        style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px dashed rgba(56, 189, 248, 0.4)', color: '#38bdf8', fontSize: '0.75rem', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                        title="Simulate successful test payment for development testing"
+                      >
+                        ⚡ Test Mode: Simulate Paid
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', color: '#64748b', fontSize: '0.8rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={14} style={{ color: '#00f2fe' }} /> 256-Bit SSL Encrypted</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Zap size={14} style={{ color: '#00f2fe' }} /> Instant Provisioning</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Globe size={14} style={{ color: '#00f2fe' }} /> Auto Invoice</span>
+                </div>
               </div>
             )}
           </div>
-        </div>
-      </div>
 
-      {showSuccessPopup && (
-        <div className="payment-modal-overlay">
-          <div className="glass-card text-center" style={{ maxWidth: '480px', width: '92%', padding: '2rem 1.5rem' }}>
-            <div style={{ width: '60px', height: '60px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-              <CheckCircle2 size={36} style={{ color: '#34d399' }} />
+          {/* RIGHT COLUMN: Order Summary Card */}
+          <div>
+            <div style={{ background: '#060e1e', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '16px', padding: '2rem', position: 'sticky', top: '100px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#00f2fe', fontWeight: 700 }}>
+                    Selected Plan
+                  </span>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: '4px 0' }}>
+                    {plan.name}
+                  </h3>
+                  <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                    {plan.category.toUpperCase()} &bull; {plan.period === 'year' ? '1 Year Term' : '1 Month Term'}
+                  </span>
+                </div>
+                {plan.badge && (
+                  <span style={{ background: 'rgba(0, 242, 254, 0.15)', border: '1px solid rgba(0, 242, 254, 0.4)', color: '#00f2fe', fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '999px' }}>
+                    {plan.badge}
+                  </span>
+                )}
+              </div>
+
+              {/* Hardware Specifications */}
+              <div style={{ background: 'rgba(3, 7, 18, 0.6)', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                {plan.ram && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '0.85rem', borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}><Cpu size={14} /> Memory:</span>
+                    <span style={{ color: '#fff', fontWeight: 600 }}>{plan.ram}</span>
+                  </div>
+                )}
+                {plan.cpu && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '0.85rem', borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                    <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}><Zap size={14} /> Compute:</span>
+                    <span style={{ color: '#fff', fontWeight: 600 }}>{plan.cpu}</span>
+                  </div>
+                )}
+                {plan.storage && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '0.85rem' }}>
+                    <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}><HardDrive size={14} /> Storage:</span>
+                    <span style={{ color: '#fff', fontWeight: 600 }}>{plan.storage}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Price Calculation (10% Increased Price with Original Reference) */}
+              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                  <span style={{ color: '#94a3b8' }}>Base Reference Rate:</span>
+                  <span style={{ color: '#64748b', textDecoration: 'line-through' }}>{formatINR(plan.originalPrice)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                  <span style={{ color: '#94a3b8' }}>NOVEXHOST High-Speed Tier (+10%):</span>
+                  <span style={{ color: '#34d399' }}>Applied</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                  <span style={{ color: '#94a3b8' }}>Automated Deployment:</span>
+                  <span style={{ color: '#00f2fe', fontWeight: 600 }}>FREE (Instant)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                  <span style={{ color: '#94a3b8' }}>1.2 Tbps DDoS Shield:</span>
+                  <span style={{ color: '#00f2fe', fontWeight: 600 }}>INCLUDED</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: '1rem', marginTop: '0.5rem', borderTop: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                  <div>
+                    <span style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block' }}>Total Due Today</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>INR Currency &bull; Taxes Included</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#ffffff', fontFamily: 'Outfit, sans-serif' }}>
+                      {formatINR(plan.price)}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: '#00f2fe', display: 'block' }}>
+                      /{plan.period || 'month'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guarantees Box */}
+              <div style={{ background: 'rgba(0, 242, 254, 0.05)', border: '1px solid rgba(0, 242, 254, 0.15)', borderRadius: '10px', padding: '0.9rem', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5 }}>
+                <strong style={{ color: '#00f2fe', display: 'block', marginBottom: '4px' }}>NOVEXHOST SLA Guarantee:</strong>
+                All nodes are monitored 24/7 with zero downtime migration, daily backups, and automated failover routing.
+              </div>
+
             </div>
-
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.75rem' }}>
-              Order Submitted Successfully
-            </h2>
-
-            <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1.5rem', background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '8px' }}>
-              "Order submitted successfully. The admin will review your payment. Your server will be created only after payment approval."
-            </p>
-
-            <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.88rem', color: '#38bdf8' }}>
-              Order ID: <strong>{submittedOrderId}</strong>
-            </div>
-
-            <button
-              type="button"
-              className="primary-btn glow-btn full"
-              onClick={() => {
-                setShowSuccessPopup(false);
-                navigate(`/track-order?email=${encodeURIComponent(deliveryEmail)}&id=${encodeURIComponent(submittedOrderId)}`);
-              }}
-            >
-              Track Order Status Now
-            </button>
           </div>
+
         </div>
-      )}
-    </section>
+
+      </div>
+    </div>
   );
 }
