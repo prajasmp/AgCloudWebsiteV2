@@ -86,6 +86,9 @@ function netlifyFunctionsDevPlugin() {
 
 export default defineConfig({
   plugins: [react(), netlifyFunctionsDevPlugin()],
+  build: {
+    emptyOutDir: true
+  },
   server: {
     port: 3000,
     open: false
