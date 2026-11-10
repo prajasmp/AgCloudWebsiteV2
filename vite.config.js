@@ -87,7 +87,20 @@ function netlifyFunctionsDevPlugin() {
 export default defineConfig({
   plugins: [react(), netlifyFunctionsDevPlugin()],
   build: {
-    emptyOutDir: true
+    emptyOutDir: true,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor',
+              test: /node_modules/,
+              priority: 10,
+            },
+          ],
+        },
+      },
+    },
   },
   server: {
     port: 3000,
