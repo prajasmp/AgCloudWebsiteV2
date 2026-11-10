@@ -144,7 +144,7 @@ export async function getUserRole(authUser) {
     return devAdmin.role === 'owner' ? 'owner' : 'admin';
   }
 
-  const envAdminEmails = (process.env.ADMIN_EMAILS || 'r26377269@gmail.com,anand@agcloud.fun')
+  const envAdminEmails = (process.env.ADMIN_EMAILS || 'admin@novexhost.com')
     .split(',')
     .map(e => e.trim().toLowerCase());
 

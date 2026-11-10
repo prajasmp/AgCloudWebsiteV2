@@ -12,15 +12,21 @@ export const CATEGORIES = {
   "intel-vps": "Intel Cloud VPS",
   "amd-vps": "AMD Cloud VPS",
   "ryzen-vps": "Ryzen Ultra VPS",
+  "web-hosting": "cPanel Web Hosting",
+  "vds-ryzen9": "AMD Ryzen 9 VDS Machines",
+  "vds-ryzen7": "AMD Ryzen 7 VDS Machines",
+  "vds-xeon": "Intel Xeon VDS Machines",
   domains: "Top-Level Domains",
   "bot-hosting": "Discord / App Bot Hosting"
 };
 
 export const CATEGORY_GROUPS = [
-  { id: "plans", label: "Game Servers", categories: ["intel", "amd", "ryzen"] },
-  { id: "vps", label: "Cloud VPS", categories: ["intel-vps", "amd-vps", "ryzen-vps"] },
-  { id: "domains", label: "Domains", categories: ["domains"] },
-  { id: "bot-hosting", label: "Bot Hosting", categories: ["bot-hosting"] }
+  { id: "web-hosting", label: "Web Hosting", categories: ["web-hosting"], path: "/web-hosting" },
+  { id: "vds-machines", label: "VDS Machines", categories: ["vds-ryzen9", "vds-ryzen7", "vds-xeon"], path: "/vds-machines" },
+  { id: "plans", label: "Game Servers", categories: ["intel", "amd", "ryzen"], path: "/plans" },
+  { id: "vps", label: "Cloud VPS", categories: ["intel-vps", "amd-vps", "ryzen-vps"], path: "/plans/intel-vps" },
+  { id: "domains", label: "Domains", categories: ["domains"], path: "/plans/domains" },
+  { id: "bot-hosting", label: "Bot Hosting", categories: ["bot-hosting"], path: "/plans/bot-hosting" }
 ];
 
 export const DEFAULT_LOCATION = "Mumbai, India (Ultra Low Ping)";
@@ -155,16 +161,336 @@ export const BOT_PLANS = [
   { id: "bot-16gb", category: "bot-hosting", name: "Bot Hosting 16 GB", ram: "16 GB RAM", cpu: "8 vCore", storage: "80 GB NVMe", originalPrice: 352, price: Math.round(352 * 1.10), period: "month" }
 ];
 
+export const WEB_HOSTING_PLANS = [
+  {
+    id: "web-solo",
+    category: "web-hosting",
+    type: "web",
+    name: "NOVEX SOLO",
+    websites: "1 Website",
+    storage: "10 GB NVMe Storage",
+    databases: "2 MySQL Databases",
+    backups: "1 Backup Slot",
+    emails: "2 Email Accounts",
+    cron: "5 Cron Jobs",
+    ssl: "Free SSL Certificate",
+    cpanel: "cPanel Access Included",
+    originalPrice: 22,
+    price: 24.20,
+    period: "month",
+    features: [
+      "1 Hosted Website",
+      "10 GB NVMe High-Speed Storage",
+      "2 MySQL Databases",
+      "1 Automated Backup Slot",
+      "2 Professional Email Accounts",
+      "5 Scheduled Cron Jobs",
+      "Free AutoSSL Certificate",
+      "cPanel Control Panel Included",
+      "Unmetered Inbound Traffic"
+    ]
+  },
+  {
+    id: "web-premium",
+    category: "web-hosting",
+    type: "web",
+    name: "NOVEX PREMIUM",
+    websites: "3 Websites",
+    storage: "20 GB NVMe Storage",
+    databases: "10 MySQL Databases",
+    backups: "7 Backup Slots",
+    emails: "3 Email Accounts",
+    cron: "10 Cron Jobs",
+    ssl: "Free SSL Certificate",
+    cpanel: "cPanel Access Included",
+    domain: "Free Domain (subject to eligibility)",
+    originalPrice: 70,
+    price: 77,
+    period: "month",
+    badge: "Most Popular",
+    features: [
+      "3 Hosted Websites",
+      "20 GB NVMe High-Speed Storage",
+      "10 MySQL Databases",
+      "7 Automated Backup Slots",
+      "3 Professional Email Accounts",
+      "10 Scheduled Cron Jobs",
+      "Free Domain (subject to eligibility)",
+      "Free AutoSSL Certificate",
+      "cPanel Control Panel Included"
+    ]
+  },
+  {
+    id: "web-business",
+    category: "web-hosting",
+    type: "web",
+    name: "NOVEX BUSINESS",
+    websites: "10 Websites",
+    storage: "50 GB NVMe Storage",
+    databases: "100 MySQL Databases",
+    backups: "7 Backup Slots",
+    emails: "50 Email Accounts",
+    cron: "25 Cron Jobs",
+    ssl: "Free SSL Certificate",
+    cpanel: "cPanel Access Included",
+    ssh: "SSH Terminal Access",
+    domain: "Free Domain (subject to eligibility)",
+    originalPrice: 200,
+    price: 220,
+    period: "month",
+    badge: "Enterprise Grade",
+    features: [
+      "10 Hosted Websites",
+      "50 GB NVMe High-Speed Storage",
+      "100 MySQL Databases",
+      "7 Automated Backup Slots",
+      "50 Professional Email Accounts",
+      "25 Scheduled Cron Jobs",
+      "Free Domain (subject to eligibility)",
+      "Free AutoSSL Certificate",
+      "Direct SSH Terminal Access",
+      "cPanel Control Panel Included"
+    ]
+  }
+];
+
+export const VDS_PLANS = [
+  // AMD Ryzen 9 (Flagship)
+  {
+    id: "vds-ryzen9-9950x",
+    category: "vds-ryzen9",
+    family: "ryzen9",
+    type: "bare-metal",
+    name: "AMD Ryzen 9 9950X",
+    processor: "AMD Ryzen 9 9950X",
+    cores: "16 Cores / 32 Threads",
+    cpu: "16 Cores / 32 Threads @ up to 5.7 GHz",
+    ram: "128 GB DDR4",
+    storage: "1 TB NVMe SSD",
+    bandwidth: "Unmetered Bandwidth",
+    network: "1 Gbps Dedicated Port",
+    ipv4: "1 Dedicated IPv4",
+    access: "Full Root Access",
+    ddos: "Enterprise Anti-DDoS / Cloudflare Magic Transit (where available)",
+    ipmi: "IPMI / KVM (where available)",
+    originalPrice: 32000,
+    price: 35200,
+    period: "month",
+    badge: "Flagship VDS Bare-Metal",
+    features: [
+      "Full Physical Bare-Metal Machine",
+      "Processor: AMD Ryzen 9 9950X (16C / 32T)",
+      "128 GB High-Speed DDR4 RAM",
+      "1 TB Enterprise Gen4 NVMe SSD",
+      "Unmetered Bandwidth on 1 Gbps Port",
+      "1 Dedicated Usable Public IPv4",
+      "Complete Root & Bare-Metal OS Access",
+      "Cloudflare Magic Transit DDoS Shield",
+      "Hardware IPMI / KVM Management"
+    ]
+  },
+  // AMD Ryzen 7
+  {
+    id: "vds-ryzen7-5700g",
+    category: "vds-ryzen7",
+    family: "ryzen7",
+    type: "bare-metal",
+    name: "AMD Ryzen 7 5700G",
+    processor: "AMD Ryzen 7 5700G",
+    cores: "8 Cores / 16 Threads",
+    cpu: "8 Cores / 16 Threads @ 3.8 - 4.6 GHz",
+    ram: "128 GB DDR4",
+    storage: "1 TB NVMe SSD",
+    bandwidth: "Unmetered Bandwidth",
+    network: "1 Gbps Dedicated Port",
+    ipv4: "1 Dedicated IPv4",
+    access: "Full Root Access",
+    ddos: "Enterprise Anti-DDoS Protection",
+    originalPrice: 20000,
+    price: 22000,
+    period: "month",
+    features: [
+      "Dedicated Bare-Metal Architecture",
+      "Processor: AMD Ryzen 7 5700G (8C / 16T)",
+      "128 GB DDR4 RAM",
+      "1 TB NVMe High-Speed SSD",
+      "Unmetered Bandwidth",
+      "1 Gbps Dedicated Network Uplink",
+      "1 Dedicated Public IPv4",
+      "Full Root & Administrative Access",
+      "24/7 Enterprise DDoS Protection"
+    ]
+  },
+  {
+    id: "vds-ryzen7-5800x",
+    category: "vds-ryzen7",
+    family: "ryzen7",
+    type: "bare-metal",
+    name: "AMD Ryzen 7 5800X",
+    processor: "AMD Ryzen 7 5800X",
+    cores: "8 Cores / 16 Threads",
+    cpu: "8 Cores / 16 Threads @ 3.8 - 4.7 GHz",
+    ram: "128 GB DDR4",
+    storage: "1 TB NVMe SSD",
+    bandwidth: "Unmetered Bandwidth",
+    network: "1 Gbps Dedicated Port",
+    ipv4: "1 Dedicated IPv4",
+    access: "Full Root Access",
+    ddos: "Enterprise Anti-DDoS Protection",
+    originalPrice: 20000,
+    price: 22000,
+    period: "month",
+    badge: "High Clock Rate",
+    features: [
+      "Dedicated Bare-Metal Architecture",
+      "Processor: AMD Ryzen 7 5800X (8C / 16T)",
+      "128 GB DDR4 RAM",
+      "1 TB NVMe High-Speed SSD",
+      "Unmetered Bandwidth",
+      "1 Gbps Dedicated Network Uplink",
+      "1 Dedicated Public IPv4",
+      "Full Root & Administrative Access",
+      "24/7 Enterprise DDoS Protection"
+    ]
+  },
+  // Intel Xeon
+  {
+    id: "vds-xeon-2699v4",
+    category: "vds-xeon",
+    family: "xeon",
+    type: "bare-metal",
+    name: "Intel Xeon E5-2699 v4",
+    processor: "Intel Xeon E5-2699 v4",
+    cores: "22 Cores / 44 Threads",
+    cpu: "22 Cores / 44 Threads (High Density)",
+    ram: "128 GB DDR4",
+    storage: "1 TB NVMe SSD",
+    bandwidth: "Unmetered Bandwidth",
+    network: "1 Gbps Dedicated Port",
+    ipv4: "1 Dedicated IPv4",
+    access: "Full Root Access",
+    ddos: "Enterprise Anti-DDoS Protection",
+    ipmi: "IPMI / KVM (where available)",
+    originalPrice: 25000,
+    price: 27500,
+    period: "month",
+    badge: "44 High-Density Threads",
+    features: [
+      "Enterprise Multi-Thread Bare-Metal",
+      "Processor: Intel Xeon E5-2699 v4 (22C / 44T)",
+      "128 GB ECC Registered DDR4 RAM",
+      "1 TB NVMe Storage Drive",
+      "Unmetered Bandwidth on 1 Gbps Port",
+      "1 Dedicated Public IPv4",
+      "Complete Root OS Access",
+      "Automated DDoS Mitigation",
+      "IPMI / KVM Remote Management"
+    ]
+  },
+  {
+    id: "vds-xeon-2680v4",
+    category: "vds-xeon",
+    family: "xeon",
+    type: "bare-metal",
+    name: "Intel Xeon E5-2680 v4",
+    processor: "Intel Xeon E5-2680 v4",
+    cores: "14 Cores / 28 Threads",
+    cpu: "14 Cores / 28 Threads",
+    ram: "128 GB DDR4",
+    storage: "1 TB NVMe SSD",
+    bandwidth: "Unmetered Bandwidth",
+    network: "1 Gbps Dedicated Port",
+    ipv4: "1 Dedicated IPv4",
+    access: "Full Root Access",
+    ddos: "Enterprise Anti-DDoS Protection",
+    ipmi: "IPMI / KVM (where available)",
+    originalPrice: 25000,
+    price: 27500,
+    period: "month",
+    features: [
+      "Enterprise Multi-Thread Bare-Metal",
+      "Processor: Intel Xeon E5-2680 v4 (14C / 28T)",
+      "128 GB ECC Registered DDR4 RAM",
+      "1 TB NVMe Storage Drive",
+      "Unmetered Bandwidth on 1 Gbps Port",
+      "1 Dedicated Public IPv4",
+      "Complete Root OS Access",
+      "Automated DDoS Mitigation",
+      "IPMI / KVM Remote Management"
+    ]
+  },
+  {
+    id: "vds-xeon-2670v4",
+    category: "vds-xeon",
+    family: "xeon",
+    type: "bare-metal",
+    name: "Intel Xeon E5-2670 v4",
+    processor: "Intel Xeon E5-2670 v4",
+    cores: "14 Cores / 28 Threads",
+    cpu: "14 Cores / 28 Threads",
+    ram: "128 GB DDR4",
+    storage: "1 TB NVMe SSD",
+    bandwidth: "Unmetered Bandwidth",
+    network: "1 Gbps Dedicated Port",
+    ipv4: "1 Dedicated IPv4",
+    access: "Full Root Access",
+    ddos: "Enterprise Anti-DDoS Protection",
+    ipmi: "IPMI / KVM (where available)",
+    originalPrice: 25000,
+    price: 27500,
+    period: "month",
+    features: [
+      "Enterprise Multi-Thread Bare-Metal",
+      "Processor: Intel Xeon E5-2670 v4 (14C / 28T)",
+      "128 GB ECC Registered DDR4 RAM",
+      "1 TB NVMe Storage Drive",
+      "Unmetered Bandwidth on 1 Gbps Port",
+      "1 Dedicated Public IPv4",
+      "Complete Root OS Access",
+      "Automated DDoS Mitigation",
+      "IPMI / KVM Remote Management"
+    ]
+  }
+];
+
+export const BILLING_CYCLES = [
+  { id: "1mo", label: "1 Month", months: 1, duration: "1 Month", days: 30 },
+  { id: "3mo", label: "3 Months (Quarterly)", months: 3, duration: "3 Months", days: 90 },
+  { id: "6mo", label: "6 Months (Half-Yearly)", months: 6, duration: "6 Months", days: 180 },
+  { id: "12mo", label: "1 Year (Yearly)", months: 12, duration: "1 Year", days: 365 }
+];
+
+export const SUPPORTED_VDS_OS = [
+  { id: "ubuntu-24-04", name: "Ubuntu 24.04 LTS (Noble Numbat)", tag: "Recommended", icon: "🐧" },
+  { id: "ubuntu-22-04", name: "Ubuntu 22.04 LTS (Jammy Jellyfish)", tag: "LTS Stable", icon: "🐧" },
+  { id: "debian-12", name: "Debian 12 (Bookworm)", tag: "Solid", icon: "🍥" },
+  { id: "debian-13", name: "Debian 13 (Trixie)", tag: "Next-Gen", icon: "🍥" },
+  { id: "almalinux-9", name: "AlmaLinux 9 (RHEL Compatible)", tag: "Enterprise", icon: "🛡️" },
+  { id: "windows-server-2022", name: "Windows Server 2022 (BYOL / Eval)", tag: "Evaluation", icon: "🪟" }
+];
+
 export const ALL_PLANS = [
   ...GAME_PLANS,
   ...VPS_PLANS,
   ...DOMAIN_PLANS,
-  ...BOT_PLANS
+  ...BOT_PLANS,
+  ...WEB_HOSTING_PLANS,
+  ...VDS_PLANS
 ];
 
 export const getPlanById = (id) => ALL_PLANS.find(p => p.id === id);
 
+export function calculatePriceForCycle(baseMonthlyPrice, months = 1) {
+  const m = Number(months) || 1;
+  return Math.round(Number(baseMonthlyPrice) * m * 100) / 100;
+}
+
 export function formatINR(val) {
   if (val === undefined || val === null || val === 'N/A') return 'N/A';
-  return `₹${Number(val).toLocaleString('en-IN')}`;
+  const num = Number(val);
+  if (isNaN(num)) return 'N/A';
+  if (Number.isInteger(num)) {
+    return `₹${num.toLocaleString('en-IN')}`;
+  }
+  return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

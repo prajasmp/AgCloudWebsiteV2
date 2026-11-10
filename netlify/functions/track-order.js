@@ -48,6 +48,7 @@ export async function handler(event, context) {
 
     if (order) {
       const server = order.panel_server_id ? getServerByIdFromStore(order.panel_server_id) : null;
+      const formatted = formatOrderForTracking(order, server);
       return {
         statusCode: 200,
         headers: {
@@ -55,7 +56,8 @@ export async function handler(event, context) {
           'Access-Control-Allow-Origin': '*'
         },
         body: JSON.stringify({
-          orders: [formatOrderForTracking(order, server)]
+          order: formatted,
+          orders: [formatted]
         })
       };
     }
@@ -172,6 +174,51 @@ export async function handler(event, context) {
 }
 
 function formatOrderForTracking(order, server) {
+  const isWebHosting = order.plan_id?.startsWith('web-');
+  const isBareMetalVds = order.plan_id?.startsWith('vds-');
+
+  let formattedServerDetails = null;
+
+  if (order.provisioning_status === 'active' || server || order.server_details) {
+    const details = order.server_details || {};
+
+    if (isWebHosting) {
+      formattedServerDetails = {
+        type: 'web',
+        domain: order.domain_name || details.domain || order.server_name,
+        username: details.username,
+        cpanelUrl: details.cpanelUrl || 'https://cpanel.novexhost.com:2083',
+        nameservers: details.nameservers || ['ns1.novexhost.com', 'ns2.novexhost.com'],
+        status: 'active'
+      };
+    } else if (isBareMetalVds) {
+      formattedServerDetails = {
+        type: 'bare-metal',
+        machineId: details.machineId || order.machine_id,
+        machineName: details.machineName || order.server_name,
+        ip: details.ip || '103.195.102.10',
+        sshPort: details.sshPort || 22,
+        rootUser: details.rootUser || 'root',
+        os: details.os || order.os || 'Ubuntu 24.04 LTS',
+        hostname: details.hostname || order.server_name,
+        datacenter: details.datacenter || order.server_region || 'Mumbai DC-1',
+        processor: details.processor || 'Enterprise Bare-Metal Processor',
+        ram: details.ram || '128 GB DDR4',
+        status: 'active'
+      };
+    } else {
+      formattedServerDetails = {
+        type: 'game',
+        ip: server?.ip || details.ip || '103.195.100.42',
+        port: server?.port || details.port || 25565,
+        nodeId: server?.node_id || 1,
+        status: server?.status || 'active',
+        memoryMb: server?.memory_mb || 2048,
+        panelUrl: process.env.PTERODACTYL_PANEL_URL || 'https://panel.novexhost.com'
+      };
+    }
+  }
+
   return {
     id: order.id,
     trackingToken: order.tracking_token,
@@ -182,23 +229,19 @@ function formatOrderForTracking(order, server) {
     planName: order.plan_name,
     amount: order.amount,
     currency: order.currency || 'INR',
+    duration: order.duration || '1 Month',
     paymentStatus: order.payment_status || 'PENDING',
     provisioningStatus: order.provisioning_status || 'waiting_payment',
     serverName: order.server_name || order.plan_name,
+    domainName: order.domain_name || null,
     serverRegion: order.server_region || 'Mumbai, India',
-    panelServerId: order.panel_server_id || null,
+    os: order.os || null,
+    panelServerId: order.panel_server_id || order.machine_id || null,
     deploymentError: order.deployment_error || null,
     createdAt: order.created_at,
     paidAt: order.paid_at || null,
     provisionedAt: order.provisioned_at || null,
-    serverDetails: (order.provisioning_status === 'active' || server) ? {
-      ip: server?.ip || order.server_details?.ip || '103.195.100.42',
-      port: server?.port || order.server_details?.port || 25565,
-      nodeId: server?.node_id || 1,
-      status: server?.status || 'active',
-      memoryMb: server?.memory_mb || 2048,
-      panelUrl: process.env.PTERODACTYL_PANEL_URL || 'https://panel.novexhost.com'
-    } : null,
+    serverDetails: formattedServerDetails,
     supportInstructions: 'If you have questions about your server, connect with our 24/7 technical team on Discord or email support@novexhost.com with your Order Reference.'
   };
 }

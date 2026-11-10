@@ -33,7 +33,7 @@ export async function handler(event, context) {
     const hasRazorpaySecret = Boolean(process.env.RAZORPAY_KEY_SECRET && !process.env.RAZORPAY_KEY_SECRET.includes('your_'));
     const hasWebhookSecret = Boolean(process.env.RAZORPAY_WEBHOOK_SECRET && !process.env.RAZORPAY_WEBHOOK_SECRET.includes('your_'));
 
-    const panelUrl = process.env.PTERODACTYL_PANEL_URL || 'https://panel.agcloud.fun';
+    const panelUrl = process.env.PTERODACTYL_PANEL_URL || 'https://panel.novexhost.com';
     const hasPteroAppKey = Boolean(process.env.PTERODACTYL_APPLICATION_API_KEY && !process.env.PTERODACTYL_APPLICATION_API_KEY.includes('your_'));
     const hasPteroClientKey = Boolean(process.env.PTERODACTYL_CLIENT_API_KEY && !process.env.PTERODACTYL_CLIENT_API_KEY.includes('your_'));
 
@@ -93,3 +93,4 @@ export async function handler(event, context) {
     };
   }
 }
+

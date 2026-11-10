@@ -22,6 +22,8 @@ function netlifyFunctionsDevPlugin() {
         if (funcName === 'admin/retry-deployment') funcName = 'admin-retry-deployment';
         if (funcName === 'admin/products') funcName = 'admin-products';
         if (funcName === 'admin/settings') funcName = 'admin-settings';
+        if (funcName === 'admin/webhosting') funcName = 'admin-webhosting';
+        if (funcName === 'admin/vds') funcName = 'admin-vds';
         if (funcName === 'admin/orders' || funcName === 'admin/orders/action') funcName = 'admin-orders';
         if (funcName === 'admin/approve-order') funcName = 'admin-approve-order';
         if (funcName === 'admin/servers') funcName = 'admin-servers';

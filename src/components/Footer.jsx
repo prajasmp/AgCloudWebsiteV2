@@ -26,6 +26,8 @@ export default function Footer() {
 
         <div className="footer-col">
           <h4>Hosting Solutions</h4>
+          <Link to="/web-hosting" style={{ color: '#00f2fe', fontWeight: 600 }}>cPanel Web Hosting</Link>
+          <Link to="/vds-machines" style={{ color: '#00f2fe', fontWeight: 600 }}>VDS Bare-Metal Machines</Link>
           <Link to="/plans">Minecraft Game Servers</Link>
           <Link to="/plans">High-Clock Cloud VPS</Link>
           <Link to="/plans">Bot Hosting</Link>

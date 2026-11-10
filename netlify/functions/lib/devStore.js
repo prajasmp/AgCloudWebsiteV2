@@ -36,7 +36,10 @@ function savePersistedData() {
       adminUsers: globalThis.__novexhost_admin_users_store__ || [],
       webhookEvents: globalThis.__novexhost_webhook_events_store__ || [],
       invoices: globalThis.__novexhost_invoices_store__ || [],
-      productOverrides: globalThis.__novexhost_product_overrides_store__ || {}
+      productOverrides: globalThis.__novexhost_product_overrides_store__ || {},
+      webHostingAccounts: globalThis.__novexhost_webhosting_store__ || [],
+      physicalMachines: globalThis.__novexhost_machines_store__ || [],
+      vdsRecords: globalThis.__novexhost_vds_records_store__ || []
     };
     fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
@@ -51,6 +54,15 @@ if (!globalThis.__novexhost_orders_store__) {
 }
 if (!globalThis.__novexhost_servers_store__) {
   globalThis.__novexhost_servers_store__ = persisted?.servers || [];
+}
+if (!globalThis.__novexhost_webhosting_store__) {
+  globalThis.__novexhost_webhosting_store__ = persisted?.webHostingAccounts || [];
+}
+if (!globalThis.__novexhost_machines_store__) {
+  globalThis.__novexhost_machines_store__ = persisted?.physicalMachines || [];
+}
+if (!globalThis.__novexhost_vds_records_store__) {
+  globalThis.__novexhost_vds_records_store__ = persisted?.vdsRecords || [];
 }
 if (!globalThis.__novexhost_admin_users_store__) {
   globalThis.__novexhost_admin_users_store__ = persisted?.adminUsers || [
@@ -88,6 +100,9 @@ const adminUsersStore = globalThis.__novexhost_admin_users_store__;
 const webhookEventsStore = globalThis.__novexhost_webhook_events_store__;
 const invoicesStore = globalThis.__novexhost_invoices_store__;
 const productOverridesStore = globalThis.__novexhost_product_overrides_store__;
+const webHostingStore = globalThis.__novexhost_webhosting_store__;
+const physicalMachinesStore = globalThis.__novexhost_machines_store__;
+const vdsRecordsStore = globalThis.__novexhost_vds_records_store__;
 
 // ================= ORDERS =================
 export function addOrderToStore(order) {
@@ -294,4 +309,75 @@ export function setProductPriceOverride(planId, price) {
 
 export function getProductPriceOverrides() {
   return { ...productOverridesStore };
+}
+
+// ================= WEB HOSTING ACCOUNTS =================
+export function addWebHostingAccount(account) {
+  const existingIdx = webHostingStore.findIndex(a => a.id === account.id || (a.order_id && a.order_id === account.order_id));
+  if (existingIdx >= 0) {
+    webHostingStore[existingIdx] = { ...webHostingStore[existingIdx], ...account };
+  } else {
+    webHostingStore.unshift(account);
+  }
+  savePersistedData();
+  return account;
+}
+
+export function updateWebHostingAccount(accountId, updates) {
+  const acc = webHostingStore.find(a => a.id === accountId || a.order_id === accountId);
+  if (acc) {
+    Object.assign(acc, updates, { updated_at: new Date().toISOString() });
+    savePersistedData();
+    return acc;
+  }
+  return null;
+}
+
+export function getWebHostingAccountByOrderId(orderId) {
+  return webHostingStore.find(a => a.order_id === orderId) || null;
+}
+
+export function getAllWebHostingAccounts() {
+  return [...webHostingStore];
+}
+
+// ================= PHYSICAL MACHINES & VDS =================
+export function getAllPhysicalMachines() {
+  return [...physicalMachinesStore];
+}
+
+export function setPhysicalMachines(machines) {
+  physicalMachinesStore.length = 0;
+  physicalMachinesStore.push(...machines);
+  savePersistedData();
+  return physicalMachinesStore;
+}
+
+export function updatePhysicalMachine(machineId, updates) {
+  const m = physicalMachinesStore.find(item => item.id === machineId);
+  if (m) {
+    Object.assign(m, updates);
+    savePersistedData();
+    return m;
+  }
+  return null;
+}
+
+export function addVdsRecord(record) {
+  const existingIdx = vdsRecordsStore.findIndex(r => r.order_id === record.order_id);
+  if (existingIdx >= 0) {
+    vdsRecordsStore[existingIdx] = { ...vdsRecordsStore[existingIdx], ...record };
+  } else {
+    vdsRecordsStore.unshift(record);
+  }
+  savePersistedData();
+  return record;
+}
+
+export function getVdsRecordByOrderId(orderId) {
+  return vdsRecordsStore.find(r => r.order_id === orderId) || null;
+}
+
+export function getAllVdsRecords() {
+  return [...vdsRecordsStore];
 }

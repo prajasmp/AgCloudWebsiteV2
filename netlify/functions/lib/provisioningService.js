@@ -1,12 +1,14 @@
 import { getTrustedPlan } from './planConfig.js';
 import { getOrCreateUser, createMinecraftServer } from './pterodactylService.js';
-import { updateOrderInStore, addServerToStore, getOrderByIdFromStore } from './devStore.js';
+import { createWebHostingAccount } from './whmService.js';
+import { allocatePhysicalMachine, startBareMetalProvisioning } from './bareMetalService.js';
+import { updateOrderInStore, addServerToStore, getOrderByIdFromStore, addWebHostingAccount, addVdsRecord, getAllPhysicalMachines } from './devStore.js';
 import { supabaseAdmin, isSupabaseAdminConfigured } from './supabaseAdmin.js';
 import { sendDeploymentStartedEmail, sendServerReadyEmail, sendDeploymentFailureEmail } from './emailService.js';
 
 /**
  * Automates server provisioning after payment verification.
- * Safe, idempotent, logs all steps, never charges the customer again on retry.
+ * Safe, idempotent, logs all steps, supports Game Servers, cPanel Web Hosting, and Bare-Metal VDS.
  */
 export async function executeServerDeployment(orderId) {
   let order = getOrderByIdFromStore(orderId);
@@ -25,17 +27,17 @@ export async function executeServerDeployment(orderId) {
   }
 
   // Prevent duplicate provisioning
-  if (order.provisioning_status === 'active' || order.panel_server_id) {
-    console.log(`[Provisioning] Order ${orderId} is already provisioned (Server ID: ${order.panel_server_id}). Skipping.`);
+  if (order.provisioning_status === 'active' || order.panel_server_id || order.machine_id) {
+    console.log(`[Provisioning] Order ${orderId} is already provisioned. Skipping.`);
     return {
       success: true,
       alreadyProvisioned: true,
-      panelServerId: order.panel_server_id
+      panelServerId: order.panel_server_id || order.machine_id
     };
   }
 
   const nowIso = new Date().toISOString();
-  console.log(`[Provisioning Started] Deploying server for order ${orderId} (Plan: ${order.plan_id})...`);
+  console.log(`[Provisioning Started] Deploying service for order ${orderId} (Plan: ${order.plan_id})...`);
 
   // Update status to provisioning
   updateOrderInStore(orderId, {
@@ -63,9 +65,145 @@ export async function executeServerDeployment(orderId) {
       throw new Error(`Invalid plan ID ${order.plan_id} configured in order.`);
     }
 
-    // Step 1: Pterodactyl User
     const customerEmail = order.user_email || order.contact_email;
     const customerName = order.user_name || 'NOVEX Customer';
+
+    // ----------------------------------------------------
+    // BRANCH A: cPanel WEB HOSTING PROVISIONING
+    // ----------------------------------------------------
+    if (plan.type === 'web' || order.plan_id.startsWith('web-')) {
+      const domain = order.domain_name || order.server_name || `${customerName.replace(/[^a-z0-9]/gi, '').toLowerCase()}.novexhost.site`;
+      console.log(`[Provisioning Web Hosting] Creating cPanel account for domain: ${domain}...`);
+
+      const webAccount = await createWebHostingAccount({
+        domain,
+        customerEmail,
+        planId: plan.id,
+        planName: plan.name
+      });
+
+      const hostingRecord = {
+        id: `WEB-${order.id.replace('ORD-', '')}`,
+        order_id: order.id,
+        domain: webAccount.domain,
+        username: webAccount.username,
+        cpanel_url: webAccount.cpanelUrl,
+        package: webAccount.package,
+        nameservers: webAccount.nameservers,
+        customer_email: customerEmail,
+        customer_name: customerName,
+        status: 'active',
+        created_at: nowIso,
+        updated_at: nowIso
+      };
+
+      addWebHostingAccount(hostingRecord);
+
+      const orderUpdates = {
+        provisioning_status: 'active',
+        domain_name: webAccount.domain,
+        provisioned_at: nowIso,
+        updated_at: nowIso,
+        server_details: {
+          domain: webAccount.domain,
+          username: webAccount.username,
+          cpanelUrl: webAccount.cpanelUrl,
+          nameservers: webAccount.nameservers,
+          temporaryPassword: webAccount.credentials.password
+        }
+      };
+
+      updateOrderInStore(orderId, orderUpdates);
+      sendServerReadyEmail(order, orderUpdates.server_details).catch(e => console.warn('[Email Warning]:', e.message));
+
+      console.log(`[Provisioning Completed] Successfully activated Web Hosting account for ${webAccount.domain} (Order ${orderId})!`);
+      return {
+        success: true,
+        type: 'web',
+        ...orderUpdates.server_details
+      };
+    }
+
+    // ----------------------------------------------------
+    // BRANCH B: BARE-METAL VDS MACHINE PROVISIONING
+    // ----------------------------------------------------
+    if (plan.type === 'bare-metal' || order.plan_id.startsWith('vds-')) {
+      console.log(`[Provisioning Bare-Metal] Allocating physical machine for ${plan.name} (${order.server_region || 'Mumbai'})...`);
+
+      const storeMachines = getAllPhysicalMachines();
+      const machine = await allocatePhysicalMachine({
+        planId: plan.id,
+        location: order.server_region,
+        orderId: order.id,
+        storeMachines
+      });
+
+      const bareMetalResult = await startBareMetalProvisioning({
+        machine,
+        os: order.os || 'Ubuntu 24.04 LTS',
+        hostname: order.server_name || `${machine.name.toLowerCase()}.novexhost.net`,
+        sshKey: order.ssh_key,
+        customerEmail,
+        orderId: order.id
+      });
+
+      const vdsRecord = {
+        id: `VDS-${order.id.replace('ORD-', '')}`,
+        order_id: order.id,
+        machine_id: machine.id,
+        machine_name: machine.name,
+        rack: machine.rack,
+        datacenter: machine.datacenter,
+        ip: bareMetalResult.ip,
+        ssh_port: bareMetalResult.sshPort,
+        root_user: bareMetalResult.rootUser,
+        os: bareMetalResult.os,
+        processor: machine.processor || plan.processor,
+        ram: plan.ram || '128 GB DDR4',
+        storage: plan.storage || '1 TB NVMe SSD',
+        status: 'active',
+        customer_email: customerEmail,
+        created_at: nowIso,
+        updated_at: nowIso
+      };
+
+      addVdsRecord(vdsRecord);
+
+      const orderUpdates = {
+        provisioning_status: 'active',
+        machine_id: machine.id,
+        provisioned_at: nowIso,
+        updated_at: nowIso,
+        server_details: {
+          machineId: machine.id,
+          machineName: machine.name,
+          rack: machine.rack,
+          datacenter: machine.datacenter,
+          ip: bareMetalResult.ip,
+          sshPort: bareMetalResult.sshPort,
+          rootUser: bareMetalResult.rootUser,
+          rootPassword: bareMetalResult.rootPassword,
+          os: bareMetalResult.os,
+          hostname: bareMetalResult.hostname,
+          processor: machine.processor || plan.processor,
+          ram: plan.ram || '128 GB DDR4'
+        }
+      };
+
+      updateOrderInStore(orderId, orderUpdates);
+      sendServerReadyEmail(order, orderUpdates.server_details).catch(e => console.warn('[Email Warning]:', e.message));
+
+      console.log(`[Provisioning Completed] Successfully activated Bare-Metal VDS Machine ${machine.name} on IP ${bareMetalResult.ip}!`);
+      return {
+        success: true,
+        type: 'bare-metal',
+        ...orderUpdates.server_details
+      };
+    }
+
+    // ----------------------------------------------------
+    // BRANCH C: STANDARD GAME & VPS SERVER (Pterodactyl API)
+    // ----------------------------------------------------
     const serverName = order.server_name || `${plan.name} Node`;
 
     let pterodactylUserId = 1;
@@ -80,7 +218,6 @@ export async function executeServerDeployment(orderId) {
       pterodactylUserId = 1;
     }
 
-    // Step 2: Create Server via Pterodactyl Application API
     const provisionResult = await createMinecraftServer({
       serverName,
       pterodactylUserId,
@@ -97,7 +234,6 @@ export async function executeServerDeployment(orderId) {
     const ip = provisionResult.ip || '103.195.100.42';
     const port = provisionResult.port || 25565;
 
-    // Step 3: Record Server
     const serverRecord = {
       id: `SRV-${order.id.replace('ORD-', '')}`,
       order_id: order.id,
@@ -122,15 +258,6 @@ export async function executeServerDeployment(orderId) {
 
     addServerToStore(serverRecord);
 
-    if (isSupabaseAdminConfigured() && supabaseAdmin) {
-      try {
-        await supabaseAdmin.from('servers').insert(serverRecord);
-      } catch (dbErr) {
-        console.warn('[Provisioning Supabase Server Insert Warning]:', dbErr.message);
-      }
-    }
-
-    // Step 4: Update Order
     const orderUpdates = {
       provisioning_status: 'active',
       panel_server_id: panelServerId,
@@ -147,16 +274,6 @@ export async function executeServerDeployment(orderId) {
     };
 
     updateOrderInStore(orderId, orderUpdates);
-
-    if (isSupabaseAdminConfigured() && supabaseAdmin) {
-      try {
-        await supabaseAdmin.from('orders').update(orderUpdates).eq('id', orderId);
-      } catch (dbErr) {
-        console.warn('[Provisioning Supabase Order Update Warning]:', dbErr.message);
-      }
-    }
-
-    // Step 5: Send Live Server Email
     sendServerReadyEmail(order, serverRecord).catch(e => console.warn('[Email Warning]:', e.message));
 
     console.log(`[Provisioning Completed] Successfully deployed server ${panelServerId} for order ${orderId}!`);
@@ -185,7 +302,6 @@ export async function executeServerDeployment(orderId) {
       } catch (e) {}
     }
 
-    // Notify customer that their paid order is safe and queued for retry
     sendDeploymentFailureEmail(order, provErr.message).catch(e => console.warn('[Email Warning]:', e.message));
 
     return {
@@ -194,3 +310,4 @@ export async function executeServerDeployment(orderId) {
     };
   }
 }
+

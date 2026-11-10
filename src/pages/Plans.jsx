@@ -180,7 +180,13 @@ export default function Plans() {
               <button
                 key={group.id}
                 className={`pill-option ${activeGroup.id === group.id ? 'active' : ''}`}
-                onClick={() => selectCategory(group.categories[0])}
+                onClick={() => {
+                  if (group.path && (group.id === 'web-hosting' || group.id === 'vds-machines')) {
+                    navigate(group.path);
+                  } else {
+                    selectCategory(group.categories[0]);
+                  }
+                }}
               >
                 {group.label}
               </button>

@@ -152,6 +152,242 @@ DOMAINS_DATA.forEach(dom => {
   };
 });
 
+// 5. WEB HOSTING PLANS (Reference NextyHost + 10%)
+const WEB_HOSTING_DATA = [
+  {
+    id: 'web-solo',
+    name: 'NOVEX SOLO',
+    websites: 1,
+    storageGb: 10,
+    databases: 2,
+    backups: 1,
+    emails: 2,
+    cron: 5,
+    originalPrice: 22,
+    price: 24.20
+  },
+  {
+    id: 'web-premium',
+    name: 'NOVEX PREMIUM',
+    websites: 3,
+    storageGb: 20,
+    databases: 10,
+    backups: 7,
+    emails: 3,
+    cron: 10,
+    originalPrice: 70,
+    price: 77
+  },
+  {
+    id: 'web-business',
+    name: 'NOVEX BUSINESS',
+    websites: 10,
+    storageGb: 50,
+    databases: 100,
+    backups: 7,
+    emails: 50,
+    cron: 25,
+    originalPrice: 200,
+    price: 220
+  }
+];
+
+WEB_HOSTING_DATA.forEach(w => {
+  TRUSTED_PLANS[w.id] = {
+    id: w.id,
+    category: 'web-hosting',
+    type: 'web',
+    name: w.name,
+    websites: w.websites,
+    storageGb: w.storageGb,
+    diskMb: w.storageGb * 1024,
+    databases: w.databases,
+    backups: w.backups,
+    emails: w.emails,
+    cron: w.cron,
+    originalPrice: w.originalPrice,
+    price: w.price,
+    duration: '1 Month',
+    durationDays: 30
+  };
+});
+
+// 6. VDS MACHINES - BARE-METAL PHYSICAL SERVERS (Reference NextyHost + 10%)
+const VDS_DATA = [
+  // AMD Ryzen 9
+  {
+    id: 'vds-ryzen9-9950x',
+    category: 'vds-ryzen9',
+    family: 'ryzen9',
+    type: 'bare-metal',
+    name: 'AMD Ryzen 9 9950X',
+    processor: 'AMD Ryzen 9 9950X',
+    cores: '16 Cores / 32 Threads',
+    cpuPercent: 3200,
+    ramGb: 128,
+    memoryMb: 128 * 1024,
+    storageGb: 1000,
+    diskMb: 1000 * 1024,
+    network: '1 Gbps',
+    bandwidth: 'Unmetered',
+    ipv4Count: 1,
+    originalPrice: 32000,
+    price: 35200
+  },
+  // AMD Ryzen 7
+  {
+    id: 'vds-ryzen7-5700g',
+    category: 'vds-ryzen7',
+    family: 'ryzen7',
+    type: 'bare-metal',
+    name: 'AMD Ryzen 7 5700G',
+    processor: 'AMD Ryzen 7 5700G',
+    cores: '8 Cores / 16 Threads',
+    cpuPercent: 1600,
+    ramGb: 128,
+    memoryMb: 128 * 1024,
+    storageGb: 1000,
+    diskMb: 1000 * 1024,
+    network: '1 Gbps',
+    bandwidth: 'Unmetered',
+    ipv4Count: 1,
+    originalPrice: 20000,
+    price: 22000
+  },
+  {
+    id: 'vds-ryzen7-5800x',
+    category: 'vds-ryzen7',
+    family: 'ryzen7',
+    type: 'bare-metal',
+    name: 'AMD Ryzen 7 5800X',
+    processor: 'AMD Ryzen 7 5800X',
+    cores: '8 Cores / 16 Threads',
+    cpuPercent: 1600,
+    ramGb: 128,
+    memoryMb: 128 * 1024,
+    storageGb: 1000,
+    diskMb: 1000 * 1024,
+    network: '1 Gbps',
+    bandwidth: 'Unmetered',
+    ipv4Count: 1,
+    originalPrice: 20000,
+    price: 22000
+  },
+  // Intel Xeon
+  {
+    id: 'vds-xeon-2699v4',
+    category: 'vds-xeon',
+    family: 'xeon',
+    type: 'bare-metal',
+    name: 'Intel Xeon E5-2699 v4',
+    processor: 'Intel Xeon E5-2699 v4',
+    cores: '22 Cores / 44 Threads',
+    cpuPercent: 4400,
+    ramGb: 128,
+    memoryMb: 128 * 1024,
+    storageGb: 1000,
+    diskMb: 1000 * 1024,
+    network: '1 Gbps',
+    bandwidth: 'Unmetered',
+    ipv4Count: 1,
+    originalPrice: 25000,
+    price: 27500
+  },
+  {
+    id: 'vds-xeon-2680v4',
+    category: 'vds-xeon',
+    family: 'xeon',
+    type: 'bare-metal',
+    name: 'Intel Xeon E5-2680 v4',
+    processor: 'Intel Xeon E5-2680 v4',
+    cores: '14 Cores / 28 Threads',
+    cpuPercent: 2800,
+    ramGb: 128,
+    memoryMb: 128 * 1024,
+    storageGb: 1000,
+    diskMb: 1000 * 1024,
+    network: '1 Gbps',
+    bandwidth: 'Unmetered',
+    ipv4Count: 1,
+    originalPrice: 25000,
+    price: 27500
+  },
+  {
+    id: 'vds-xeon-2670v4',
+    category: 'vds-xeon',
+    family: 'xeon',
+    type: 'bare-metal',
+    name: 'Intel Xeon E5-2670 v4',
+    processor: 'Intel Xeon E5-2670 v4',
+    cores: '14 Cores / 28 Threads',
+    cpuPercent: 2800,
+    ramGb: 128,
+    memoryMb: 128 * 1024,
+    storageGb: 1000,
+    diskMb: 1000 * 1024,
+    network: '1 Gbps',
+    bandwidth: 'Unmetered',
+    ipv4Count: 1,
+    originalPrice: 25000,
+    price: 27500
+  }
+];
+
+VDS_DATA.forEach(v => {
+  TRUSTED_PLANS[v.id] = {
+    id: v.id,
+    category: v.category,
+    family: v.family,
+    type: 'bare-metal',
+    name: v.name,
+    processor: v.processor,
+    cores: v.cores,
+    ramGb: v.ramGb,
+    ram: `${v.ramGb} GB DDR4`,
+    storageGb: v.storageGb,
+    storage: '1 TB NVMe SSD',
+    memoryMb: v.memoryMb,
+    diskMb: v.diskMb,
+    cpuPercent: v.cpuPercent,
+    network: v.network,
+    bandwidth: v.bandwidth,
+    ipv4Count: v.ipv4Count,
+    originalPrice: v.originalPrice,
+    price: v.price,
+    duration: '1 Month',
+    durationDays: 30
+  };
+});
+
+/**
+ * Resolves billing cycle multipliers
+ */
+export function getBillingCycleDetails(cycleInput) {
+  const norm = String(cycleInput || '1mo').toLowerCase().trim();
+  if (norm === '12mo' || norm === '12' || norm === '1year' || norm === 'yearly' || norm === '1y') {
+    return { multiplier: 12, duration: '1 Year', durationDays: 365, cycleId: '12mo' };
+  }
+  if (norm === '6mo' || norm === '6' || norm === 'half-yearly' || norm === '6months' || norm === '6m') {
+    return { multiplier: 6, duration: '6 Months', durationDays: 180, cycleId: '6mo' };
+  }
+  if (norm === '3mo' || norm === '3' || norm === 'quarterly' || norm === '3months' || norm === '3m') {
+    return { multiplier: 3, duration: '3 Months', durationDays: 90, cycleId: '3mo' };
+  }
+  return { multiplier: 1, duration: '1 Month', durationDays: 30, cycleId: '1mo' };
+}
+
+export function calculateOrderAmount(plan, cycleInput) {
+  const cycle = getBillingCycleDetails(cycleInput);
+  const totalAmount = Math.round(Number(plan.price) * cycle.multiplier * 100) / 100;
+  const amountInPaise = Math.round(totalAmount * 100);
+  return {
+    ...cycle,
+    monthlyPrice: plan.price,
+    totalAmount,
+    amountInPaise
+  };
+}
+
 export function getTrustedPlan(planId) {
   return TRUSTED_PLANS[planId] || null;
 }

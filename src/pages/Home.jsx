@@ -127,7 +127,7 @@ export default function Home() {
 
         <div className="ag-hero-art-layer">
           <img
-            src="/assets/agcloud_hero_cinematic.png"
+            src="/assets/novexhost_hero_cinematic.png"
             alt="NOVEXHOST Futuristic Cloud Infrastructure"
             className="ag-cinematic-bg-img"
           />
@@ -354,6 +354,79 @@ export default function Home() {
                 <span className="stat-val">&lt;12ms</span>
                 <span className="stat-lbl">Average Ping</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NEW SERVICE PILLARS: Web Hosting & VDS Bare-Metal */}
+      <section className="ag-section" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
+        <div className="container">
+          <div className="text-center" style={{ maxWidth: '700px', margin: '0 auto 2.5rem' }}>
+            <span className="ag-section-badge">EXPANDED INFRASTRUCTURE</span>
+            <h2 className="ag-section-title" style={{ marginTop: '8px' }}>
+              Web Hosting &amp; Dedicated Bare-Metal
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>
+              Whether launching a high-traffic WordPress portal or provisioning full AMD Ryzen 9 bare-metal power, NOVEXHOST delivers enterprise SLA guarantees.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+            {/* Pillar 1: Web Hosting */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(8, 20, 38, 0.9) 0%, rgba(3, 7, 18, 0.95) 100%)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '24px', padding: '2.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(6, 182, 212, 0.1)', color: '#00f2fe', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                <span>From ₹24.20/month</span>
+              </div>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '0.75rem' }}>
+                cPanel Web Hosting
+              </h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                Ultra-fast NVMe storage, free automated Let's Encrypt SSL, official cPanel control, and 1-click WordPress installers.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem', color: '#cbd5e1' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#00f2fe' }}>&check;</span> 10 GB to 50 GB NVMe Storage
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#00f2fe' }}>&check;</span> MySQL Databases &amp; phpMyAdmin
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#00f2fe' }}>&check;</span> Free AutoSSL &amp; Professional Email
+                </li>
+              </ul>
+              <Link to="/web-hosting" className="ag-primary-cta" style={{ width: '100%', justifyContent: 'center' }}>
+                <span>Explore Web Hosting Plans</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            {/* Pillar 2: VDS Bare-Metal */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(8, 20, 38, 0.9) 0%, rgba(3, 7, 18, 0.95) 100%)', border: '2px solid rgba(0, 242, 254, 0.4)', borderRadius: '24px', padding: '2.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 0 40px rgba(6,182,212,0.15)' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(0, 242, 254, 0.15)', color: '#00f2fe', padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1rem', border: '1px solid rgba(0, 242, 254, 0.4)' }}>
+                <span>Dedicated Bare-Metal</span>
+              </div>
+              <h3 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '0.75rem' }}>
+                VDS Physical Machines
+              </h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                Flagship AMD Ryzen 9 9950X, Ryzen 7 &amp; Intel Xeon bare-metal machines. 128 GB DDR4, 1 Gbps unmetered uplink, and full root access.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem', color: '#cbd5e1' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#00f2fe' }}>&check;</span> 100% Dedicated Physical Silicon
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#00f2fe' }}>&check;</span> 128 GB RAM + 1 TB NVMe SSD
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#00f2fe' }}>&check;</span> Cloudflare Magic Transit DDoS Shield
+                </li>
+              </ul>
+              <Link to="/vds-machines" className="ag-primary-cta" style={{ width: '100%', justifyContent: 'center' }}>
+                <span>Configure VDS Machines</span>
+                <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </div>

@@ -157,10 +157,58 @@ export async function sendDeploymentStartedEmail(order) {
   return sendEmail({ to: order.user_email || order.contact_email, subject: `Deploying Server: ${order.id}`, html });
 }
 
-// 4. Server Successfully Deployed
+// 4. Server Successfully Deployed (Auto-detects Game, Web Hosting, or VDS Bare-Metal)
 export async function sendServerReadyEmail(order, serverDetails) {
   const panelUrl = process.env.PTERODACTYL_PANEL_URL || 'https://panel.novexhost.com';
   const trackingUrl = `${process.env.PUBLIC_URL || 'http://localhost:3000'}/track-order?id=${order.id}&token=${order.tracking_token}`;
+
+  // If Web Hosting
+  if (order.plan_id?.startsWith('web-') || serverDetails.cpanelUrl || serverDetails.domain) {
+    const html = getAquaEmailWrapper('Your Web Hosting Account is Active!', `
+      <h2 style="color: #ffffff; margin-top: 0;">🌐 Web Hosting is Live &amp; Ready!</h2>
+      <p>Hello <strong>${order.user_name || 'Customer'}</strong>,</p>
+      <p>Your NOVEXHOST cPanel Web Hosting environment has been provisioned and is active.</p>
+      <div class="highlight-card">
+        <div class="stat-row"><span class="stat-label">Domain</span><span class="stat-value" style="color: #00f2fe; font-family: monospace;">${serverDetails.domain || order.domain_name}</span></div>
+        <div class="stat-row"><span class="stat-label">cPanel Username</span><span class="stat-value">${serverDetails.username}</span></div>
+        <div class="stat-row"><span class="stat-label">cPanel URL</span><span class="stat-value"><a href="${serverDetails.cpanelUrl}" style="color: #38bdf8;">${serverDetails.cpanelUrl}</a></span></div>
+        <div class="stat-row"><span class="stat-label">Nameservers</span><span class="stat-value">ns1.novexhost.com / ns2.novexhost.com</span></div>
+        <div class="stat-row"><span class="stat-label">Status</span><span class="stat-value" style="color: #34d399; font-weight: 700;">ACTIVE</span></div>
+      </div>
+      <p>Point your domain's nameservers to NOVEXHOST to connect your website, or login to cPanel to upload files, setup databases, and configure email accounts.</p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${serverDetails.cpanelUrl}" class="btn" style="margin-right: 12px;">Login to cPanel &rarr;</a>
+        <a href="${trackingUrl}" style="color: #38bdf8; font-size: 13px; font-weight: 600; text-decoration: underline; margin-left: 10px;">View Order Tracking</a>
+      </div>
+    `);
+    return sendEmail({ to: order.user_email || order.contact_email, subject: `Web Hosting Online: ${serverDetails.domain || order.plan_name} is Ready!`, html });
+  }
+
+  // If Bare-Metal VDS
+  if (order.plan_id?.startsWith('vds-') || serverDetails.machineName || serverDetails.rootUser) {
+    const html = getAquaEmailWrapper('Your Bare-Metal VDS Machine is Active!', `
+      <h2 style="color: #ffffff; margin-top: 0;">⚡ Bare-Metal Machine is Online!</h2>
+      <p>Hello <strong>${order.user_name || 'Customer'}</strong>,</p>
+      <p>Your dedicated physical bare-metal machine has passed NOC network and OS provisioning tests and is active.</p>
+      <div class="highlight-card">
+        <div class="stat-row"><span class="stat-label">Machine ID</span><span class="stat-value">${serverDetails.machineName || serverDetails.machineId}</span></div>
+        <div class="stat-row"><span class="stat-label">Public IPv4</span><span class="stat-value" style="color: #00f2fe; font-family: monospace;">${serverDetails.ip}</span></div>
+        <div class="stat-row"><span class="stat-label">SSH Port</span><span class="stat-value">22 (Standard SSH)</span></div>
+        <div class="stat-row"><span class="stat-label">Root Username</span><span class="stat-value">root</span></div>
+        <div class="stat-row"><span class="stat-label">Operating System</span><span class="stat-value">${serverDetails.os || order.os || 'Ubuntu 24.04 LTS'}</span></div>
+        <div class="stat-row"><span class="stat-label">Datacenter</span><span class="stat-value">${serverDetails.datacenter || order.server_region || 'Mumbai DC-1'}</span></div>
+        <div class="stat-row"><span class="stat-label">Network</span><span class="stat-value">1 Gbps Dedicated Unmetered</span></div>
+        <div class="stat-row"><span class="stat-label">Status</span><span class="stat-value" style="color: #34d399; font-weight: 700;">ONLINE (ACTIVE)</span></div>
+      </div>
+      <p>You can connect immediately via SSH: <code>ssh root@${serverDetails.ip}</code></p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${trackingUrl}" class="btn">View Machine &amp; Credentials &rarr;</a>
+      </div>
+    `);
+    return sendEmail({ to: order.user_email || order.contact_email, subject: `Bare-Metal VDS Active: ${order.plan_name} (${serverDetails.ip})`, html });
+  }
+
+  // Standard Pterodactyl Game / VPS Server
   const html = getAquaEmailWrapper('Your Server Is Live!', `
     <h2 style="color: #ffffff; margin-top: 0;">🚀 Your Server is Active &amp; Ready!</h2>
     <p>Hello <strong>${order.user_name || 'Customer'}</strong>,</p>
@@ -217,3 +265,4 @@ export async function sendRefundUpdateEmail(order, refundDetails) {
   `);
   return sendEmail({ to: order.user_email || order.contact_email, subject: `Refund Update: Order ${order.id}`, html });
 }
+

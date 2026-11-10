@@ -258,3 +258,25 @@ export async function approveOrRejectOrder(orderId, action, rejectionReason = ''
     body: JSON.stringify({ orderId, action, rejectionReason })
   });
 }
+
+export async function fetchAdminWebHosting() {
+  return await apiFetch('/api/admin/webhosting');
+}
+
+export async function manageAdminWebHosting(payload) {
+  return await apiFetch('/api/admin/webhosting', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchAdminVds() {
+  return await apiFetch('/api/admin/vds');
+}
+
+export async function manageAdminVds(payload) {
+  return await apiFetch('/api/admin/vds', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}

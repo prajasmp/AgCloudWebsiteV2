@@ -1,6 +1,6 @@
 import { verifyFirebaseToken, isAuthorizedAdmin } from './lib/firebaseAdmin.js';
 import { supabaseAdmin, isSupabaseAdminConfigured } from './lib/supabaseAdmin.js';
-import { getAllOrdersFromStore, getAllServersFromStore } from './lib/devStore.js';
+import { getAllOrdersFromStore, getAllServersFromStore, getAllWebHostingAccounts, getAllVdsRecords, getAllPhysicalMachines } from './lib/devStore.js';
 
 export async function handler(event, context) {
   if (event.httpMethod === 'OPTIONS') {
@@ -80,6 +80,11 @@ export async function handler(event, context) {
     );
 
     const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+    const webHostingOrders = orders.filter(o => o.plan_id?.startsWith('web-'));
+    const vdsOrders = orders.filter(o => o.plan_id?.startsWith('vds-'));
+    const webAccounts = getAllWebHostingAccounts();
+    const vdsRecords = getAllVdsRecords();
+    const physicalMachines = getAllPhysicalMachines();
 
     const metrics = {
       totalRevenue,
@@ -89,6 +94,11 @@ export async function handler(event, context) {
       failedPayments: failedOrders.length,
       activeServers: servers.filter(s => s.status === 'online' || s.status === 'active' || s.status === 'running').length,
       totalServers: servers.length,
+      totalWebHostingOrders: webHostingOrders.length,
+      totalWebHostingAccounts: webAccounts.length,
+      totalVdsOrders: vdsOrders.length,
+      totalVdsRecords: vdsRecords.length,
+      totalPhysicalMachines: physicalMachines.length,
       failedDeployments: failedDeployments.length,
       totalUsers: Math.max(userCount, new Set(servers.map(s => s.customer_email || s.owner_uid)).size),
       recentTransactions: orders.slice(0, 10).map(o => ({

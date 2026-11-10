@@ -15,7 +15,11 @@ import {
   fetchAdminAdminUsers,
   addAdminUser,
   removeAdminUser,
-  deleteAdminOrder
+  deleteAdminOrder,
+  fetchAdminWebHosting,
+  manageAdminWebHosting,
+  fetchAdminVds,
+  manageAdminVds
 } from '../services/api';
 import NovexLogo from '../components/NovexLogo';
 import {
@@ -40,6 +44,10 @@ export default function Admin({ mode }) {
   const [products, setProducts] = useState([]);
   const [settings, setSettings] = useState(null);
   const [adminUsers, setAdminUsers] = useState([]);
+  const [webAccounts, setWebAccounts] = useState([]);
+  const [whmConfig, setWhmConfig] = useState(null);
+  const [vdsMachines, setVdsMachines] = useState([]);
+  const [vdsRecords, setVdsRecords] = useState([]);
 
   const [loadingData, setLoadingData] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(null);
@@ -77,13 +85,15 @@ export default function Admin({ mode }) {
     setErrorMsg('');
 
     try {
-      const [ordersRes, serversRes, metricsRes, productsRes, settingsRes, adminsRes] = await Promise.all([
+      const [ordersRes, serversRes, metricsRes, productsRes, settingsRes, adminsRes, webRes, vdsRes] = await Promise.all([
         fetchAdminOrders().catch(() => ({ orders: [] })),
         fetchAdminServers().catch(() => ({ servers: [] })),
         fetchAdminMetrics().catch(() => ({ metrics: null })),
         fetchAdminProducts().catch(() => ({ products: [] })),
         fetchAdminSettings().catch(() => ({ settings: null })),
-        fetchAdminAdminUsers().catch(() => ({ adminUsers: [] }))
+        fetchAdminAdminUsers().catch(() => ({ adminUsers: [] })),
+        fetchAdminWebHosting().catch(() => ({ accounts: [], whmConfig: null })),
+        fetchAdminVds().catch(() => ({ machines: [], vdsRecords: [] }))
       ]);
 
       setOrders(ordersRes.orders || []);
@@ -92,6 +102,10 @@ export default function Admin({ mode }) {
       setProducts(productsRes.products || []);
       setSettings(settingsRes.settings || null);
       setAdminUsers(adminsRes.adminUsers || []);
+      setWebAccounts(webRes.accounts || []);
+      setWhmConfig(webRes.whmConfig || null);
+      setVdsMachines(vdsRes.machines || []);
+      setVdsRecords(vdsRes.vdsRecords || []);
     } catch (err) {
       console.error('Failed to load admin data:', err);
       setErrorMsg('Failed to load admin data. Verify backend authorization.');
@@ -157,6 +171,41 @@ export default function Admin({ mode }) {
       await loadAdminData();
     } catch (err) {
       setErrorMsg(err.message || 'Failed to update price');
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  // Web Hosting actions
+  const handleToggleWebHostingAccount = async (username, accountId, currentStatus) => {
+    const action = currentStatus === 'active' ? 'suspend' : 'unsuspend';
+    setActionInProgress(`web_${accountId}_${action}`);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      await manageAdminWebHosting({ action, username, accountId });
+      setSuccessMsg(`Web Hosting account ${username} ${action}ed.`);
+      await loadAdminData();
+    } catch (err) {
+      setErrorMsg(err.message || `Failed to ${action} account`);
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  // VDS Machine actions
+  const handleUpdateMachineStatus = async (machineId, status) => {
+    setActionInProgress(`vds_${machineId}_${status}`);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      await manageAdminVds({ action: 'update_machine', machineId, status });
+      setSuccessMsg(`Physical machine ${machineId} status updated to ${status}.`);
+      await loadAdminData();
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to update machine');
     } finally {
       setActionInProgress(null);
     }
@@ -287,6 +336,8 @@ export default function Admin({ mode }) {
           {[
             { id: 'dashboard', label: 'Dashboard Overview', icon: Activity },
             { id: 'orders', label: `Orders (${orders.length})`, icon: ShoppingBag },
+            { id: 'webhosting', label: `Web Hosting (${webAccounts.length})`, icon: Globe },
+            { id: 'vds', label: `VDS Machines (${vdsMachines.length})`, icon: Cpu },
             { id: 'products', label: 'Product Pricing', icon: Zap },
             { id: 'servers', label: `Active Servers (${servers.length})`, icon: Server },
             { id: 'payments', label: 'Razorpay Payments', icon: CreditCard },
@@ -373,6 +424,22 @@ export default function Admin({ mode }) {
                   {metrics?.failedDeployments || 0}
                 </div>
                 <span style={{ fontSize: '0.8rem', color: '#fca5a5', marginTop: '4px', display: 'block' }}>Retryable with 1-click</span>
+              </div>
+
+              <div style={{ background: '#081426', border: '1px solid rgba(6, 182, 212, 0.25)', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Web Hosting Accounts</span>
+                <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#00f2fe', fontFamily: 'Outfit, sans-serif', marginTop: '6px' }}>
+                  {webAccounts.length}
+                </div>
+                <span style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: '4px', display: 'block' }}>cPanel Web Hosting</span>
+              </div>
+
+              <div style={{ background: '#081426', border: '2px solid rgba(0, 242, 254, 0.3)', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>VDS Bare-Metal Fleet</span>
+                <div style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', fontFamily: 'Outfit, sans-serif', marginTop: '6px' }}>
+                  {vdsMachines.length}
+                </div>
+                <span style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '4px', display: 'block' }}>AMD &amp; Intel Bare-Metal</span>
               </div>
             </div>
 
@@ -568,6 +635,233 @@ export default function Admin({ mode }) {
                         </tr>
                       ))
                     )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TAB: WEB HOSTING MANAGEMENT ================= */}
+        {activeTab === 'webhosting' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Globe size={20} style={{ color: '#00f2fe' }} /> cPanel / WHM Web Hosting Management
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                  Manage provisioned cPanel accounts, suspend/unsuspend sites, and verify WHM cluster connection.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>WHM Integration:</span>
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  background: whmConfig?.configured ? 'rgba(16, 185, 129, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                  border: whmConfig?.configured ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(234, 179, 8, 0.4)',
+                  color: whmConfig?.configured ? '#34d399' : '#facc15'
+                }}>
+                  {whmConfig?.configured ? `Connected (${whmConfig.host}:${whmConfig.port})` : 'Queued / Standby (Credentials Pending)'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ background: '#081426', border: '1px solid rgba(6, 182, 212, 0.25)', borderRadius: '18px', padding: '1.75rem', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(6, 182, 212, 0.2)', color: '#94a3b8' }}>
+                      <th style={{ padding: '12px 14px' }}>Domain Name</th>
+                      <th style={{ padding: '12px 14px' }}>cPanel User</th>
+                      <th style={{ padding: '12px 14px' }}>Package Tier</th>
+                      <th style={{ padding: '12px 14px' }}>Customer Email</th>
+                      <th style={{ padding: '12px 14px' }}>Status</th>
+                      <th style={{ padding: '12px 14px', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {webAccounts.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                          No Web Hosting accounts created yet. New customer orders will be staged here automatically.
+                        </td>
+                      </tr>
+                    ) : (
+                      webAccounts.map(acc => (
+                        <tr key={acc.id || acc.domain} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          <td style={{ padding: '14px', color: '#00f2fe', fontWeight: 600, fontFamily: 'monospace' }}>
+                            {acc.domain}
+                          </td>
+                          <td style={{ padding: '14px', color: '#fff', fontFamily: 'monospace' }}>
+                            {acc.username}
+                          </td>
+                          <td style={{ padding: '14px', color: '#cbd5e1' }}>
+                            <span style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#00f2fe', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>
+                              {acc.package || 'NOVEX_SOLO'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px', color: '#94a3b8' }}>
+                            {acc.customer_email || 'Guest'}
+                          </td>
+                          <td style={{ padding: '14px' }}>
+                            <span style={{
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: acc.status === 'active' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              color: acc.status === 'active' ? '#34d399' : '#f87171'
+                            }}>
+                              {acc.status?.toUpperCase() || 'ACTIVE'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'right' }}>
+                            <div style={{ display: 'inline-flex', gap: '8px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleWebHostingAccount(acc.username, acc.id, acc.status)}
+                                disabled={actionInProgress?.startsWith(`web_${acc.id}`)}
+                                style={{
+                                  background: acc.status === 'active' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                  border: acc.status === 'active' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+                                  color: acc.status === 'active' ? '#f87171' : '#34d399',
+                                  padding: '5px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.78rem',
+                                  cursor: 'pointer',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {acc.status === 'active' ? 'Suspend' : 'Unsuspend'}
+                              </button>
+                              <a
+                                href={acc.cpanel_url || `https://${acc.domain}:2083`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  background: 'rgba(0, 242, 254, 0.1)',
+                                  border: '1px solid rgba(0, 242, 254, 0.3)',
+                                  color: '#00f2fe',
+                                  padding: '5px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 600,
+                                  textDecoration: 'none',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <span>cPanel</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TAB: VDS BARE-METAL MANAGEMENT ================= */}
+        {activeTab === 'vds' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Cpu size={20} style={{ color: '#00f2fe' }} /> Dedicated Physical Bare-Metal Fleet (VDS)
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                  Physical bare-metal machine inventory across flagship AMD Ryzen 9 9950X, Ryzen 7, and Intel Xeon hardware.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#00f2fe', padding: '4px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                  Total Nodes: {vdsMachines.length}
+                </span>
+                <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', padding: '4px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                  Available: {vdsMachines.filter(m => m.status === 'available').length}
+                </span>
+              </div>
+            </div>
+
+            {/* Physical Machines Table */}
+            <div style={{ background: '#081426', border: '1px solid rgba(6, 182, 212, 0.25)', borderRadius: '18px', padding: '1.75rem', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(6, 182, 212, 0.2)', color: '#94a3b8' }}>
+                      <th style={{ padding: '12px 14px' }}>Machine Identifier</th>
+                      <th style={{ padding: '12px 14px' }}>Processor &amp; Cores</th>
+                      <th style={{ padding: '12px 14px' }}>RAM / Storage</th>
+                      <th style={{ padding: '12px 14px' }}>Location / Rack</th>
+                      <th style={{ padding: '12px 14px' }}>Public IPv4</th>
+                      <th style={{ padding: '12px 14px' }}>Status</th>
+                      <th style={{ padding: '12px 14px', textAlign: 'right' }}>Controls</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vdsMachines.map(m => (
+                      <tr key={m.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{ padding: '14px', color: '#fff', fontWeight: 700, fontFamily: 'monospace' }}>
+                          {m.name || m.id}
+                        </td>
+                        <td style={{ padding: '14px', color: '#00f2fe' }}>
+                          {m.processor}
+                        </td>
+                        <td style={{ padding: '14px', color: '#cbd5e1' }}>
+                          {m.ram} &bull; {m.storage}
+                        </td>
+                        <td style={{ padding: '14px', color: '#94a3b8' }}>
+                          {m.location} ({m.rack})
+                        </td>
+                        <td style={{ padding: '14px', color: '#38bdf8', fontFamily: 'monospace' }}>
+                          {(m.ipPool && m.ipPool[0]) ? m.ipPool[0] : 'Pool Staged'}
+                        </td>
+                        <td style={{ padding: '14px' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: m.status === 'available' ? 'rgba(16, 185, 129, 0.15)' : m.status === 'allocated' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                            color: m.status === 'available' ? '#34d399' : m.status === 'allocated' ? '#00f2fe' : '#facc15'
+                          }}>
+                            {m.status?.toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px', textAlign: 'right' }}>
+                          <select
+                            value={m.status}
+                            onChange={(e) => handleUpdateMachineStatus(m.id, e.target.value)}
+                            disabled={actionInProgress?.startsWith(`vds_${m.id}`)}
+                            style={{
+                              padding: '5px 8px',
+                              background: '#030712',
+                              border: '1px solid rgba(6, 182, 212, 0.3)',
+                              borderRadius: '6px',
+                              color: '#fff',
+                              fontSize: '0.8rem',
+                              outline: 'none'
+                            }}
+                          >
+                            <option value="available">Available</option>
+                            <option value="allocated">Allocated</option>
+                            <option value="maintenance">Maintenance</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

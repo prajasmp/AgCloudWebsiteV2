@@ -1,27 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
-import { getPlanById, SERVER_LOCATIONS, formatINR } from '../data/plans';
+import { useParams, useNavigate, useLocation, Navigate, Link } from 'react-router-dom';
+import { getPlanById, SERVER_LOCATIONS, BILLING_CYCLES, SUPPORTED_VDS_OS, calculatePriceForCycle, formatINR } from '../data/plans';
 import { useCurrency } from '../context/CurrencyContext';
 import { createPaymentOrder, verifyPayment } from '../services/api';
 import NovexLogo from '../components/NovexLogo';
 import {
   ShieldCheck, Lock, Zap, User, Mail, Smartphone,
   Check, ArrowRight, ArrowLeft, QrCode, CheckCircle2,
-  Server, Globe, Cpu, HardDrive, RefreshCw, AlertCircle, Loader2
+  Server, Globe, Cpu, HardDrive, RefreshCw, AlertCircle, Loader2,
+  Terminal, Key, Radio, Calendar
 } from 'lucide-react';
 
 export default function Checkout() {
   const { planId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const plan = getPlanById(planId || '');
   const { formatPrice } = useCurrency();
+
+  // Query parameter for preselected billing cycle (e.g. ?cycle=3mo)
+  const queryParams = new URLSearchParams(location.search);
+  const initialCycleId = queryParams.get('cycle') || '1mo';
 
   // Customer details (No login required)
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
 
-  // Server configuration
+  // Configuration options
+  const [billingCycle, setBillingCycle] = useState(initialCycleId);
+  const [domainName, setDomainName] = useState('');
+  const [operatingSystem, setOperatingSystem] = useState('ubuntu-24-04');
+  const [sshKey, setSshKey] = useState('');
   const [serverName, setServerName] = useState('');
   const [serverRegion, setServerRegion] = useState('Mumbai, India');
 
@@ -31,6 +41,12 @@ export default function Checkout() {
   const [activeStep, setActiveStep] = useState(1); // 1: Configure & Details, 2: Payment Review & Razorpay
   const [createdOrderData, setCreatedOrderData] = useState(null);
   const [isDeploying, setIsDeploying] = useState(false);
+
+  const isWebHosting = plan?.category === 'web-hosting' || plan?.id?.startsWith('web-');
+  const isBareMetalVds = plan?.category?.startsWith('vds-') || plan?.type === 'bare-metal';
+
+  const currentCycle = BILLING_CYCLES.find(c => c.id === billingCycle) || BILLING_CYCLES[0];
+  const totalAmount = plan ? calculatePriceForCycle(plan.price, currentCycle.months) : 0;
 
   useEffect(() => {
     // If an existing guest user stored details in localStorage, autofill for convenience
@@ -86,6 +102,11 @@ export default function Checkout() {
       return;
     }
 
+    if (isWebHosting && (!domainName || !domainName.includes('.'))) {
+      setErrorMessage('Please enter a valid primary domain name (e.g. yoursite.com) for Web Hosting.');
+      return;
+    }
+
     try {
       localStorage.setItem('novexhost_guest_info', JSON.stringify({
         name: fullName.trim(),
@@ -108,8 +129,12 @@ export default function Checkout() {
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         mobileNumber: mobileNumber.trim(),
-        serverName: serverName.trim() || `${plan.name} Node`,
-        serverRegion
+        serverName: serverName.trim() || domainName.trim() || `${plan.name} Node`,
+        serverRegion,
+        billingCycle: currentCycle.id,
+        domainName: domainName.trim(),
+        os: isBareMetalVds ? operatingSystem : null,
+        sshKey: isBareMetalVds ? sshKey.trim() : null
       });
 
       if (!orderRes.success) {
@@ -130,11 +155,10 @@ export default function Checkout() {
         amount: orderRes.amountInPaise,
         currency: 'INR',
         name: 'NOVEXHOST',
-        description: `${plan.name} - Instant Deployment`,
+        description: `${plan.name} (${currentCycle.duration})`,
         image: '/favicon.svg',
         order_id: orderRes.razorpayOrderId,
         handler: async function (response) {
-          // Razorpay payment success handler
           await handlePaymentSuccess(response, orderRes);
         },
         prefill: {
@@ -145,7 +169,8 @@ export default function Checkout() {
         notes: {
           orderId: orderRes.orderId,
           planId: plan.id,
-          serverName: serverName.trim()
+          duration: currentCycle.duration,
+          serverName: serverName.trim() || domainName.trim()
         },
         theme: {
           color: '#00f2fe'
@@ -157,19 +182,13 @@ export default function Checkout() {
         }
       };
 
-      // If in sandbox mode without active keys or if user triggers test simulation
-      if (!window.Razorpay || orderRes.razorpayKeyId === 'rzp_test_placeholder' || orderRes.razorpayOrderId.startsWith('order_')) {
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (failRes) {
-          console.error('[Razorpay Failed]:', failRes.error);
-          setErrorMessage(`Payment failed: ${failRes.error.description || 'Transaction declined'}`);
-          setSubmitting(false);
-        });
-        rzp.open();
-      } else {
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      }
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (failRes) {
+        console.error('[Razorpay Failed]:', failRes.error);
+        setErrorMessage(`Payment failed: ${failRes.error.description || 'Transaction declined'}`);
+        setSubmitting(false);
+      });
+      rzp.open();
     } catch (err) {
       console.error('[Checkout Error]:', err);
       setErrorMessage(err.message || 'Payment initiation failed. Please try again.');
@@ -195,7 +214,6 @@ export default function Checkout() {
         throw new Error(verifyRes.error || 'Payment signature verification failed.');
       }
 
-      // Navigate to order tracking page with token
       navigate(`/order-success/${orderMeta.orderId}?token=${orderMeta.trackingToken}`);
     } catch (err) {
       console.error('[Verification Error]:', err);
@@ -216,8 +234,12 @@ export default function Checkout() {
           fullName: fullName.trim(),
           email: email.trim().toLowerCase(),
           mobileNumber: mobileNumber.trim(),
-          serverName: serverName.trim() || `${plan.name} Node`,
-          serverRegion
+          serverName: serverName.trim() || domainName.trim() || `${plan.name} Node`,
+          serverRegion,
+          billingCycle: currentCycle.id,
+          domainName: domainName.trim(),
+          os: isBareMetalVds ? operatingSystem : null,
+          sshKey: isBareMetalVds ? sshKey.trim() : null
         });
         setCreatedOrderData(orderRes);
       }
@@ -338,25 +360,119 @@ export default function Checkout() {
                 </div>
 
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', marginBottom: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Server size={18} style={{ color: '#00f2fe' }} /> Server Configuration
+                  <Calendar size={18} style={{ color: '#00f2fe' }} /> Billing Cycle &amp; Term
                 </h2>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.6rem' }}>
+                    Select Billing Duration
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                    {BILLING_CYCLES.map(c => {
+                      const isSel = c.id === billingCycle;
+                      const cPrice = calculatePriceForCycle(plan.price, c.months);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setBillingCycle(c.id)}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: '10px',
+                            textAlign: 'left',
+                            background: isSel ? 'rgba(6, 182, 212, 0.15)' : '#030712',
+                            border: isSel ? '2px solid #00f2fe' : '1px solid rgba(255, 255, 255, 0.08)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isSel ? '#00f2fe' : '#e2e8f0' }}>{c.duration}</span>
+                            {isSel && <CheckCircle2 size={14} style={{ color: '#00f2fe' }} />}
+                          </div>
+                          <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block' }}>{formatINR(cPrice)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', marginBottom: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Server size={18} style={{ color: '#00f2fe' }} /> {isWebHosting ? 'Web Hosting Configuration' : isBareMetalVds ? 'Physical Machine Configuration' : 'Server Configuration'}
+                </h2>
+
+                {/* If Web Hosting: Prompt for Primary Domain */}
+                {isWebHosting && (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                      Primary Domain Name <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={domainName}
+                      onChange={(e) => setDomainName(e.target.value)}
+                      placeholder="e.g. mycompany.com or brandname.in"
+                      style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
+                    />
+                    <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                      Your website files and cPanel root directory will be created for this domain.
+                    </span>
+                  </div>
+                )}
+
+                {/* If VDS Bare-Metal: Prompt for OS and SSH Key */}
+                {isBareMetalVds && (
+                  <>
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                        Operating System Installation
+                      </label>
+                      <select
+                        value={operatingSystem}
+                        onChange={(e) => setOperatingSystem(e.target.value)}
+                        style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
+                      >
+                        {SUPPORTED_VDS_OS.map(osItem => (
+                          <option key={osItem.id} value={osItem.name}>
+                            {osItem.icon} {osItem.name} ({osItem.tag})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ marginBottom: '1.25rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
+                        SSH Public Key (Optional)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={sshKey}
+                        onChange={(e) => setSshKey(e.target.value)}
+                        placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5... (or leave blank for generated root password)"
+                        style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.85rem', outline: 'none', fontFamily: 'monospace' }}
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div style={{ marginBottom: '1.25rem' }}>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
-                    Server Hostname / Label
+                    {isWebHosting ? 'Account / Hostname Label' : 'Server Hostname / Label'}
                   </label>
                   <input
                     type="text"
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
-                    placeholder="my-cool-server"
+                    placeholder={isWebHosting ? 'my-web-site' : 'my-baremetal-node'}
                     style={{ width: '100%', padding: '0.8rem 1rem', background: '#030712', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '10px', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
                   />
                 </div>
 
                 <div style={{ marginBottom: '1.75rem' }}>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.4rem' }}>
-                    Server Cluster Location
+                    Datacenter Cluster Location
                   </label>
                   <select
                     value={serverRegion}
@@ -403,9 +519,25 @@ export default function Checkout() {
                     <span style={{ color: '#94a3b8' }}>Contact:</span>
                     <span style={{ color: '#ffffff', fontWeight: 600 }}>+91 {mobileNumber}</span>
                   </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Term / Duration:</span>
+                    <span style={{ color: '#00f2fe', fontWeight: 600 }}>{currentCycle.duration}</span>
+                  </div>
+                  {isWebHosting && domainName && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                      <span style={{ color: '#94a3b8' }}>Primary Domain:</span>
+                      <span style={{ color: '#00f2fe', fontWeight: 600, fontFamily: 'monospace' }}>{domainName}</span>
+                    </div>
+                  )}
+                  {isBareMetalVds && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                      <span style={{ color: '#94a3b8' }}>Target OS:</span>
+                      <span style={{ color: '#34d399', fontWeight: 600 }}>{operatingSystem}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                    <span style={{ color: '#94a3b8' }}>Server Label:</span>
-                    <span style={{ color: '#00f2fe', fontWeight: 600 }}>{serverName}</span>
+                    <span style={{ color: '#94a3b8' }}>Service Label:</span>
+                    <span style={{ color: '#ffffff', fontWeight: 600 }}>{serverName || domainName || `${plan.name} Node`}</span>
                   </div>
                 </div>
 
@@ -413,10 +545,10 @@ export default function Checkout() {
                   <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
                     <Loader2 size={36} className="spin-loader" style={{ color: '#00f2fe', margin: '0 auto 1rem' }} />
                     <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                      Payment Verified! Provisioning Server...
+                      Payment Verified! Provisioning Service...
                     </h3>
                     <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                      Contacting Pterodactyl node cluster &amp; allocating RAM limits. Please hold...
+                      {isWebHosting ? 'Creating cPanel account and allocating DNS...' : isBareMetalVds ? 'Allocating physical bare-metal hardware and triggering PXE installer...' : 'Contacting Pterodactyl node cluster & allocating RAM limits...'}
                     </p>
                   </div>
                 ) : (
@@ -435,7 +567,7 @@ export default function Checkout() {
                       ) : (
                         <>
                           <Lock size={18} />
-                          <span>Pay {formatINR(plan.price)} with Razorpay &rarr;</span>
+                          <span>Pay {formatINR(totalAmount)} with Razorpay &rarr;</span>
                         </>
                       )}
                     </button>
@@ -484,7 +616,7 @@ export default function Checkout() {
                     {plan.name}
                   </h3>
                   <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-                    {plan.category.toUpperCase()} &bull; {plan.period === 'year' ? '1 Year Term' : '1 Month Term'}
+                    {plan.category.toUpperCase()} &bull; {currentCycle.duration} Term
                   </span>
                 </div>
                 {plan.badge && (
@@ -519,19 +651,19 @@ export default function Checkout() {
               {/* Price Calculation (10% Increased Price with Original Reference) */}
               <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                  <span style={{ color: '#94a3b8' }}>Base Reference Rate:</span>
-                  <span style={{ color: '#64748b', textDecoration: 'line-through' }}>{formatINR(plan.originalPrice)}</span>
+                  <span style={{ color: '#94a3b8' }}>Base Monthly Rate:</span>
+                  <span style={{ color: '#ffffff', fontWeight: 600 }}>{formatINR(plan.price)}/mo</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                  <span style={{ color: '#94a3b8' }}>NOVEXHOST High-Speed Tier (+10%):</span>
+                  <span style={{ color: '#94a3b8' }}>Billing Duration:</span>
+                  <span style={{ color: '#00f2fe', fontWeight: 600 }}>{currentCycle.duration} ({currentCycle.months}x)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+                  <span style={{ color: '#94a3b8' }}>High-Speed Tier (+10%):</span>
                   <span style={{ color: '#34d399' }}>Applied</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                  <span style={{ color: '#94a3b8' }}>Automated Deployment:</span>
-                  <span style={{ color: '#00f2fe', fontWeight: 600 }}>FREE (Instant)</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                  <span style={{ color: '#94a3b8' }}>1.2 Tbps DDoS Shield:</span>
+                  <span style={{ color: '#94a3b8' }}>DDoS Protection:</span>
                   <span style={{ color: '#00f2fe', fontWeight: 600 }}>INCLUDED</span>
                 </div>
 
@@ -542,10 +674,10 @@ export default function Checkout() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#ffffff', fontFamily: 'Outfit, sans-serif' }}>
-                      {formatINR(plan.price)}
+                      {formatINR(totalAmount)}
                     </span>
                     <span style={{ fontSize: '0.85rem', color: '#00f2fe', display: 'block' }}>
-                      /{plan.period || 'month'}
+                      /{currentCycle.duration}
                     </span>
                   </div>
                 </div>

@@ -72,3 +72,4 @@ export default function NovexLogo({ size = 36, showText = true, className = '' }
     </div>
   );
 }
+

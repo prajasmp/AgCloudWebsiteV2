@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getTrustedPlan } from './lib/planConfig.js';
+import { getTrustedPlan, calculateOrderAmount } from './lib/planConfig.js';
 import { addOrderToStore } from './lib/devStore.js';
 import { supabaseAdmin, isSupabaseAdminConfigured } from './lib/supabaseAdmin.js';
 import { createRazorpayOrder, getRazorpayKeyId } from './lib/razorpayClient.js';
@@ -25,7 +25,19 @@ export async function handler(event, context) {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { planId, fullName, email, mobileNumber, serverName, serverRegion } = body;
+    const {
+      planId,
+      fullName,
+      email,
+      mobileNumber,
+      serverName,
+      serverRegion,
+      billingCycle,
+      domainName,
+      os,
+      sshKey,
+      rootPassword
+    } = body;
 
     // Strict validation
     if (!planId) {
@@ -69,19 +81,23 @@ export async function handler(event, context) {
       };
     }
 
+    // Calculate billing cycle pricing (1mo, 3mo, 6mo, 12mo)
+    const pricing = calculateOrderAmount(plan, billingCycle);
+
     // Generate unique order ID and unguessable 64-char crypto tracking token
     const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
     const orderId = `ORD-NVX-${Date.now().toString().slice(-4)}${randomSuffix}`;
     const trackingToken = crypto.randomBytes(24).toString('hex');
     const nowIso = new Date().toISOString();
 
-    // Create Razorpay backend order
+    // Create Razorpay backend order with precise total amount
     const rzpOrder = await createRazorpayOrder({
-      amountInInr: plan.price,
+      amountInInr: pricing.totalAmount,
       receipt: orderId,
       notes: {
         orderId,
         planId: plan.id,
+        duration: pricing.duration,
         customerEmail: email.trim().toLowerCase(),
         customerName: fullName.trim()
       }
@@ -97,17 +113,20 @@ export async function handler(event, context) {
       mobile: mobileNumber.trim(),
       plan_id: plan.id,
       plan_name: plan.name,
-      original_price: plan.originalPrice,
-      amount: plan.price,
+      original_price: Math.round(plan.originalPrice * pricing.multiplier * 100) / 100,
+      amount: pricing.totalAmount,
       currency: 'INR',
       razorpay_order_id: rzpOrder.id,
       razorpay_payment_id: null,
       payment_status: 'PENDING',
       provisioning_status: 'waiting_payment',
-      server_name: (serverName && serverName.trim()) ? serverName.trim() : `${plan.name} Node`,
+      server_name: (serverName && serverName.trim()) ? serverName.trim() : (domainName || `${plan.name} Node`),
+      domain_name: domainName ? domainName.trim().toLowerCase() : null,
       server_region: serverRegion || 'Mumbai, India',
-      duration: plan.duration || '1 Month',
-      duration_days: plan.durationDays || 30,
+      os: os || null,
+      ssh_key: sshKey || null,
+      duration: pricing.duration,
+      duration_days: pricing.durationDays,
       rejection_reason: null,
       deployment_error: null,
       retry_count: 0,
@@ -143,11 +162,12 @@ export async function handler(event, context) {
         orderId,
         trackingToken,
         razorpayOrderId: rzpOrder.id,
-        amount: plan.price,
+        amount: pricing.totalAmount,
         amountInPaise: rzpOrder.amount,
         currency: 'INR',
         razorpayKeyId: getRazorpayKeyId(),
         planName: plan.name,
+        duration: pricing.duration,
         customer: {
           name: fullName.trim(),
           email: email.trim().toLowerCase(),

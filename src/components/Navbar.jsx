@@ -66,8 +66,16 @@ export default function Navbar() {
             Home
           </NavLink>
 
+          <NavLink to="/web-hosting" onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive ? 'active' : '')}>
+            Web Hosting
+          </NavLink>
+
+          <NavLink to="/vds-machines" onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive ? 'active' : '')}>
+            VDS Machines
+          </NavLink>
+
           <NavLink to="/plans" onClick={() => setMobileOpen(false)} className={({ isActive }) => (isActive ? 'active' : '')}>
-            Hosting Plans
+            Game &amp; VPS
           </NavLink>
 
           <NavLink to="/track-order" onClick={() => setMobileOpen(false)} className={({ isActive }) => `track-order-link ${isActive ? 'active' : ''}`}>

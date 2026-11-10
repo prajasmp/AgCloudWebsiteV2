@@ -259,54 +259,122 @@ export default function TrackOrder() {
                     </div>
                   </div>
 
-                  {/* Server Connection Information (Only once provisioned) */}
+                  {/* Server / Service Connection Information (Only once provisioned) */}
                   {isProvisioned && order.serverDetails && (
                     <div style={{ background: 'rgba(0, 242, 254, 0.05)', border: '1px solid rgba(0, 242, 254, 0.3)', borderRadius: '14px', padding: '1.5rem', marginBottom: '1.5rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h4 style={{ color: '#00f2fe', fontSize: '1rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Server size={18} /> Live Server Connection Details
+                          <Server size={18} /> {order.serverDetails.type === 'web' ? 'cPanel Web Hosting Credentials' : order.serverDetails.type === 'bare-metal' ? 'Bare-Metal Machine Connection' : 'Live Server Connection Details'}
                         </h4>
                         <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px' }}>
-                          ONLINE
+                          ACTIVE &bull; ONLINE
                         </span>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                        <div>
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Connection Address</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <code style={{ background: '#030712', padding: '4px 8px', borderRadius: '6px', color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}>
-                              {order.serverDetails.ip}:{order.serverDetails.port}
-                            </code>
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(`${order.serverDetails.ip}:${order.serverDetails.port}`, `ip_${order.id}`)}
-                              style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                              title="Copy IP:Port"
+                      {/* BRANCH A: Web Hosting */}
+                      {order.serverDetails.type === 'web' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Hosted Domain</span>
+                            <span style={{ color: '#00f2fe', fontWeight: 700, fontFamily: 'monospace', fontSize: '0.95rem' }}>{order.serverDetails.domain}</span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>cPanel Username</span>
+                            <span style={{ color: '#ffffff', fontWeight: 600, fontFamily: 'monospace' }}>{order.serverDetails.username}</span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nameservers</span>
+                            <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>ns1.novexhost.com / ns2.novexhost.com</span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>cPanel Login</span>
+                            <a
+                              href={order.serverDetails.cpanelUrl || 'https://cpanel.novexhost.com:2083'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#00f2fe', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'underline' }}
                             >
-                              {copiedId === `ip_${order.id}` ? <Check size={14} style={{ color: '#34d399' }} /> : <Copy size={14} />}
-                            </button>
+                              <span>Open cPanel</span>
+                              <ExternalLink size={14} />
+                            </a>
                           </div>
                         </div>
+                      )}
 
-                        <div>
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Panel Server ID</span>
-                          <span style={{ color: '#ffffff', fontWeight: 600, fontFamily: 'monospace' }}>#{order.panelServerId || order.serverDetails.panelServerId}</span>
+                      {/* BRANCH B: Bare-Metal VDS */}
+                      {order.serverDetails.type === 'bare-metal' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Public Dedicated IPv4</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <code style={{ background: '#030712', padding: '4px 8px', borderRadius: '6px', color: '#00f2fe', fontSize: '0.95rem', fontWeight: 700 }}>
+                                {order.serverDetails.ip}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(order.serverDetails.ip, `ip_${order.id}`)}
+                                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                              >
+                                {copiedId === `ip_${order.id}` ? <Check size={14} style={{ color: '#34d399' }} /> : <Copy size={14} />}
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>SSH Command</span>
+                            <code style={{ background: '#030712', padding: '4px 8px', borderRadius: '6px', color: '#38bdf8', fontSize: '0.85rem' }}>
+                              ssh root@{order.serverDetails.ip}
+                            </code>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Operating System</span>
+                            <span style={{ color: '#ffffff', fontWeight: 600 }}>{order.serverDetails.os || order.os || 'Ubuntu 24.04 LTS'}</span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Datacenter Cluster</span>
+                            <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{order.serverDetails.datacenter || order.serverRegion || 'Mumbai DC-1'}</span>
+                          </div>
                         </div>
+                      )}
 
-                        <div>
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Control Panel</span>
-                          <a
-                            href={order.serverDetails.panelUrl || 'https://panel.novexhost.com'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#00f2fe', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'underline' }}
-                          >
-                            <span>Open Pterodactyl</span>
-                            <ExternalLink size={14} />
-                          </a>
+                      {/* BRANCH C: Standard Game Server */}
+                      {(!order.serverDetails.type || order.serverDetails.type === 'game') && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Connection Address</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <code style={{ background: '#030712', padding: '4px 8px', borderRadius: '6px', color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}>
+                                {order.serverDetails.ip}:{order.serverDetails.port}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(`${order.serverDetails.ip}:${order.serverDetails.port}`, `ip_${order.id}`)}
+                                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                                title="Copy IP:Port"
+                              >
+                                {copiedId === `ip_${order.id}` ? <Check size={14} style={{ color: '#34d399' }} /> : <Copy size={14} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Panel Server ID</span>
+                            <span style={{ color: '#ffffff', fontWeight: 600, fontFamily: 'monospace' }}>#{order.panelServerId || order.serverDetails.panelServerId}</span>
+                          </div>
+
+                          <div>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Control Panel</span>
+                            <a
+                              href={order.serverDetails.panelUrl || 'https://panel.novexhost.com'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#00f2fe', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'underline' }}
+                            >
+                              <span>Open Pterodactyl</span>
+                              <ExternalLink size={14} />
+                            </a>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
 

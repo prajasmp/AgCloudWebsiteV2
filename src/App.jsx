@@ -19,6 +19,8 @@ import ServerManage from './pages/ServerManage';
 import Admin from './pages/Admin';
 import Legal from './pages/Legal';
 import TrackOrder from './pages/TrackOrder';
+import WebHosting from './pages/WebHosting';
+import VdsMachines from './pages/VdsMachines';
 
 export default function App() {
   const [loadingComplete, setLoadingComplete] = useState(false);
@@ -62,6 +64,12 @@ export default function App() {
               <main className="main-content">
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/web-hosting" element={<WebHosting />} />
+                  <Route path="/vds-machines" element={<VdsMachines />} />
+                  <Route path="/vds-machines/:family" element={<VdsMachines />} />
+                  <Route path="/amd-ryzen-9-machines" element={<VdsMachines />} />
+                  <Route path="/amd-ryzen-7-machines" element={<VdsMachines />} />
+                  <Route path="/intel-xeon-machines" element={<VdsMachines />} />
                   <Route path="/plans" element={<Plans />} />
                   <Route path="/plans/:category" element={<Plans />} />
                   <Route path="/checkout/:planId" element={<Checkout />} />
