@@ -11,7 +11,7 @@ This document reflects the **real, code-verified** environment variables across 
 - **Local Development**: Vite server runs on port 3000 (`vite.config.js`). It includes a custom middleware (`netlifyFunctionsDevPlugin`) that executes the functions in `netlify/functions/` locally on `http://localhost:3000/api/*`.
 - **Deployment Options**:
   1. **Netlify (Recommended for Full-Stack)**: `netlify.toml` automatically builds the frontend (`dist`) and deploys all serverless functions in `netlify/functions/`.
-  2. **Cloudflare Pages (Frontend Only) + Remote Functions**: Cloudflare Pages serves the static bundle (`dist`) with `_redirects` handling SPA routing. API calls route to the backend URL configured in `VITE_API_BASE_URL`.
+  2. **Cloudflare Pages / Workers (Frontend Only) + Remote Functions**: Serves the static bundle (`dist`) with `not_found_handling: "single-page-application"` handling SPA routing. API calls route to the backend URL configured in `VITE_API_BASE_URL`.
 
 ---
 
