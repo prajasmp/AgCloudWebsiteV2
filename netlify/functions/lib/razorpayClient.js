@@ -21,11 +21,17 @@ if (keyId && keySecret && !keyId.includes('your_') && !keySecret.includes('your_
 }
 
 export function getRazorpayKeyId() {
-  return keyId || 'rzp_test_placeholder';
+  return process.env.RAZORPAY_KEY_ID || keyId || 'rzp_test_placeholder';
 }
 
 export function isRazorpayConfigured() {
-  return Boolean(razorpayInstance);
+  const currentKey = process.env.RAZORPAY_KEY_ID;
+  const currentSecret = process.env.RAZORPAY_KEY_SECRET;
+  return Boolean(
+    (razorpayInstance || (currentKey && currentSecret)) &&
+    !currentKey?.includes('your_') &&
+    !currentSecret?.includes('your_')
+  );
 }
 
 /**
@@ -78,11 +84,13 @@ export function verifyPaymentSignature({ razorpayOrderId, razorpayPaymentId, raz
     return false;
   }
 
+  const activeSecret = process.env.RAZORPAY_KEY_SECRET || keySecret;
+
   // If secret is set, verify cryptographic signature
-  if (keySecret && !keySecret.includes('your_')) {
+  if (activeSecret && !activeSecret.includes('your_')) {
     try {
       const generatedSignature = crypto
-        .createHmac('sha256', keySecret)
+        .createHmac('sha256', activeSecret)
         .update(`${razorpayOrderId}|${razorpayPaymentId}`)
         .digest('hex');
 
@@ -91,6 +99,12 @@ export function verifyPaymentSignature({ razorpayOrderId, razorpayPaymentId, raz
       console.error('[Razorpay Signature Error]:', err.message);
       return false;
     }
+  }
+
+  // In production, never allow unverified test signatures
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[Razorpay Security Alert] Rejecting payment: RAZORPAY_KEY_SECRET is not configured in production.');
+    return false;
   }
 
   // If running in development without configured secret, allow valid mock/test signatures
@@ -103,7 +117,9 @@ export function verifyPaymentSignature({ razorpayOrderId, razorpayPaymentId, raz
  * HMAC-SHA256 of raw body using RAZORPAY_WEBHOOK_SECRET
  */
 export function verifyWebhookSignature({ rawBody, signature }) {
-  if (!webhookSecret || webhookSecret.includes('your_')) {
+  const activeWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || webhookSecret;
+
+  if (!activeWebhookSecret || activeWebhookSecret.includes('your_')) {
     console.warn('[Razorpay Webhook] RAZORPAY_WEBHOOK_SECRET not set. Allowing webhook in development test mode.');
     return true;
   }
@@ -114,9 +130,13 @@ export function verifyWebhookSignature({ rawBody, signature }) {
 
   try {
     const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
+      .createHmac('sha256', activeWebhookSecret)
       .update(rawBody)
       .digest('hex');
+
+    if (expectedSignature.length !== signature.length) {
+      return false;
+    }
 
     return crypto.timingSafeEqual(
       Buffer.from(expectedSignature, 'utf-8'),

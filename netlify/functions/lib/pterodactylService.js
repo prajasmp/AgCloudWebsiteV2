@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 function getPanelUrl() {
-  return (process.env.PTERODACTYL_PANEL_URL || 'https://panel.agcloud.fun').replace(/\/$/, '');
+  return (process.env.PTERODACTYL_PANEL_URL || 'https://panel.novexhost.com').replace(/\/$/, '');
 }
 
 function getAppApiKey() {
@@ -650,7 +650,7 @@ export async function getWebsocketToken(serverIdentifier) {
   if (!checkPterodactylConfig()) {
     return {
       token: 'sandbox_websocket_token',
-      socket: 'wss://panel.agcloud.fun/api/client/servers/sandbox/ws',
+      socket: 'wss://panel.novexhost.com/api/client/servers/sandbox/ws',
       isSandbox: true
     };
   }
@@ -734,12 +734,12 @@ export async function listFiles(serverIdentifier, directory = '/') {
 export async function getFileContents(serverIdentifier, filePath) {
   if (!checkPterodactylConfig()) {
     if (filePath.endsWith('server.properties')) {
-      return '# Minecraft server properties\nminecraft-version=1.20.4\nserver-port=25565\nmotd=AG Cloud Minecraft Server\nenable-rcon=false\nmax-players=20\n';
+      return '# Minecraft server properties\nminecraft-version=1.20.4\nserver-port=25565\nmotd=NOVEXHOST Minecraft Server\nenable-rcon=false\nmax-players=20\n';
     }
     if (filePath.endsWith('eula.txt')) {
       return '# By changing the setting below to TRUE you are indicating your agreement to our EULA\neula=true\n';
     }
-    return `# Contents of ${filePath}\n# Managed via AG Cloud Panel\n`;
+    return `# Contents of ${filePath}\n# Managed via NOVEXHOST Panel\n`;
   }
 
   const baseUrl = getBaseUrl();
@@ -878,7 +878,7 @@ export async function deleteFile(serverIdentifier, rootDir, fileName) {
 
 export async function getUploadUrl(serverIdentifier) {
   if (!checkPterodactylConfig()) {
-    return { url: 'https://sandbox.agcloud.fun/upload', isSandbox: true };
+    return { url: 'https://sandbox.novexhost.com/upload', isSandbox: true };
   }
 
   const baseUrl = getBaseUrl();
@@ -971,7 +971,7 @@ export async function deleteServer(panelServerId) {
 export async function getNodes() {
   if (!checkPterodactylConfig()) {
     return [
-      { id: 1, name: 'AG-Node-01 (India High Performance)', location_id: 1, fqdn: 'node1.agcloud.fun', memory: 65536, memory_allocated: 16384, disk: 512000, disk_allocated: 40960, public: true }
+      { id: 1, name: 'NOVEX-Node-01 (India High Performance)', location_id: 1, fqdn: 'node1.novexhost.com', memory: 65536, memory_allocated: 16384, disk: 512000, disk_allocated: 40960, public: true }
     ];
   }
   const baseUrl = getBaseUrl();

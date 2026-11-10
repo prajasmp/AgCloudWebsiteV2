@@ -100,6 +100,7 @@ export async function executeServerDeployment(orderId) {
       addWebHostingAccount(hostingRecord);
 
       const orderUpdates = {
+        status: 'active',
         provisioning_status: 'active',
         domain_name: webAccount.domain,
         provisioned_at: nowIso,
@@ -170,6 +171,7 @@ export async function executeServerDeployment(orderId) {
       addVdsRecord(vdsRecord);
 
       const orderUpdates = {
+        status: 'active',
         provisioning_status: 'active',
         machine_id: machine.id,
         provisioned_at: nowIso,
@@ -259,6 +261,7 @@ export async function executeServerDeployment(orderId) {
     addServerToStore(serverRecord);
 
     const orderUpdates = {
+      status: 'active',
       provisioning_status: 'active',
       panel_server_id: panelServerId,
       panel_uuid: panelUuid,

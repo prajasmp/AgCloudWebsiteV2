@@ -30,6 +30,8 @@ async function getAuthToken() {
   return null;
 }
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
 export async function apiFetch(endpoint, options = {}) {
   const token = await getAuthToken();
   const headers = {
@@ -41,7 +43,11 @@ export async function apiFetch(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(endpoint, {
+  const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
+    ? endpoint
+    : `${API_BASE}${endpoint}`;
+
+  const res = await fetch(url, {
     ...options,
     headers
   });

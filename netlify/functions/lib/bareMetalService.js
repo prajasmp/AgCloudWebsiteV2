@@ -219,3 +219,4 @@ export async function startBareMetalProvisioning({ machine, os, hostname, sshKey
     status: 'active'
   };
 }
+

@@ -18,7 +18,7 @@ const PRIMARY_ADMIN_EMAIL = 'r26377269@gmail.com';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('ag_cloud_user');
+      const savedUser = localStorage.getItem('novexhost_user') || localStorage.getItem('ag_cloud_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch (e) {
       return null;
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(false);
   const [userRole, setUserRole] = useState(() => {
     try {
-      const savedRole = localStorage.getItem('ag_cloud_user_role');
+      const savedRole = localStorage.getItem('novexhost_user_role') || localStorage.getItem('ag_cloud_user_role');
       if (savedRole) return savedRole;
     } catch (e) {}
     if (user?.email && user.email.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
   const syncUserToDatabase = async (userObj) => {
     if (!userObj) return;
 
-    localStorage.setItem('ag_cloud_user', JSON.stringify(userObj));
+    localStorage.setItem('novexhost_user', JSON.stringify(userObj));
 
     try {
       const res = await syncUserWithBackend(userObj);

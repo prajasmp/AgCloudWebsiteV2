@@ -1,5 +1,6 @@
 import { verifyFirebaseToken, isAuthorizedAdmin } from './lib/firebaseAdmin.js';
 import { isRazorpayConfigured, getRazorpayKeyId } from './lib/razorpayClient.js';
+import { validateEnvironment } from './lib/envValidator.js';
 
 export async function handler(event, context) {
   if (event.httpMethod === 'OPTIONS') {
@@ -80,7 +81,18 @@ export async function handler(event, context) {
             port: smtpPort,
             from: smtpFrom,
             hasAuth: hasSmtpAuth
-          }
+          },
+          whm: {
+            isConfigured: Boolean(process.env.WHM_HOST && process.env.WHM_API_TOKEN),
+            host: process.env.WHM_HOST || 'Not Set',
+            username: process.env.WHM_USERNAME || 'root',
+            port: Number(process.env.WHM_PORT || 2087)
+          },
+          bareMetal: {
+            autoProvision: process.env.BARE_METAL_AUTO_PROVISION === 'true',
+            defaultDatacenter: process.env.DEFAULT_DATACENTER || 'Equinix Mumbai (BOM1)'
+          },
+          envAudit: validateEnvironment()
         }
       })
     };

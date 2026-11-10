@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
-const UPI_RECEIVER_ID = process.env.UPI_RECEIVER_ID || process.env.FAMGATEWAY_RECEIVER_VPA || 'anandagcloud@fam';
-const UPI_RECEIVER_NAME = process.env.UPI_RECEIVER_NAME || 'AG Cloud Hosting';
+const UPI_RECEIVER_ID = process.env.UPI_RECEIVER_ID || process.env.FAMGATEWAY_RECEIVER_VPA || 'billing@novexhost';
+const UPI_RECEIVER_NAME = process.env.UPI_RECEIVER_NAME || 'NOVEXHOST';
 
 export function isValidUpiId(upiId) {
   if (!upiId || typeof upiId !== 'string') return false;
@@ -17,7 +17,7 @@ export async function createUpiCollectRequest({ orderId, upiId, amount, name, mo
     throw new Error(`Invalid UPI ID format: "${cleanUpi}". Please enter a valid UPI VPA (e.g. name@upi or number@paytm).`);
   }
 
-  const upiUri = `upi://pay?pa=${encodeURIComponent(UPI_RECEIVER_ID)}&pn=${encodeURIComponent(UPI_RECEIVER_NAME)}&am=${amount}&tr=${encodeURIComponent(orderId)}&tn=${encodeURIComponent(`AG Cloud Order ${orderId}`)}`;
+  const upiUri = `upi://pay?pa=${encodeURIComponent(UPI_RECEIVER_ID)}&pn=${encodeURIComponent(UPI_RECEIVER_NAME)}&am=${amount}&tr=${encodeURIComponent(orderId)}&tn=${encodeURIComponent(`NOVEXHOST Order ${orderId}`)}`;
 
   console.log(`[UPI Payment] Order ${orderId} generated for ${amount} INR to ${UPI_RECEIVER_ID}`);
 
