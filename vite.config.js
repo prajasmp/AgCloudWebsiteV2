@@ -88,6 +88,7 @@ export default defineConfig({
   plugins: [react(), netlifyFunctionsDevPlugin()],
   build: {
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
     rolldownOptions: {
       output: {
         codeSplitting: {
@@ -98,6 +99,15 @@ export default defineConfig({
               priority: 10,
             },
           ],
+        },
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         },
       },
     },
